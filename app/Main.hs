@@ -1,5 +1,3 @@
--- {-# LANGUAGE DataKinds #-}
--- {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
@@ -42,14 +40,6 @@ data Log (m :: Type -> Type) k where
 log :: Has Log sig m => String -> m ()
 log message = send (Write message)
 
--- Log an 'a', then continue with 'k'.
--- data Log (a :: Type) (m :: Type -> Type) (k :: Type) where
---   Log :: a -> Log a m ()
---
--- -- Log an 'a'.
--- log :: Has (Log a) sig m => a -> m ()
--- log x = send (Log x)
-
 --------------------------------------------------------------------------------
 -- The logging effect carriers
 --------------------------------------------------------------------------------
@@ -62,10 +52,10 @@ instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogIO m) where
     L (Write msg) -> context <$ liftIO (print msg)
     R other       -> LogIO (alg (runLogIO . handle) other context)
 
--- Carrier one: log strings to stdout.
--- newtype LogStdoutCarrier m a = LogStdoutCarrier
---   { runLogStdout :: m a
---   } deriving (Applicative, Functor, Monad, MonadIO)
+newtype LogFile m a = LogFile { runLogFile :: m a }
+  deriving (Applicative, Functor, Monad, MonadIO)
+
+
 
 application :: Has Log sig m => m ()
 application = do
