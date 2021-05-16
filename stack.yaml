@@ -44,6 +44,7 @@ packages:
 
 extra-deps:
   - fused-effects-1.1.1.1@sha256:c029c5fb0b2154281221a71ff25709d2a11347fe061fa8c2398e7fe52a16008d,4932
+  - postgresql-simple-migration-0.1.15.0@sha256:123d8f62b0e300aede37e2d6dacc81b9468cb68dc5c3f52fe807085992280aa8,3969
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

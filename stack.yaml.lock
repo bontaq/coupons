@@ -11,6 +11,13 @@ packages:
       sha256: 7d09ba6d70fc49a5fd2feef0e6b06122589b9f5e4539680c9d7933773e7273d7
   original:
     hackage: fused-effects-1.1.1.1@sha256:c029c5fb0b2154281221a71ff25709d2a11347fe061fa8c2398e7fe52a16008d,4932
+- completed:
+    hackage: postgresql-simple-migration-0.1.15.0@sha256:123d8f62b0e300aede37e2d6dacc81b9468cb68dc5c3f52fe807085992280aa8,3969
+    pantry-tree:
+      size: 766
+      sha256: 186c759339e91c18b51879a5795f6cf8db2639001eb6b0e7c017d90e5dfa6ab2
+  original:
+    hackage: postgresql-simple-migration-0.1.15.0@sha256:123d8f62b0e300aede37e2d6dacc81b9468cb68dc5c3f52fe807085992280aa8,3969
 snapshots:
 - completed:
     size: 567241
