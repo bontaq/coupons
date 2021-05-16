@@ -1,6 +1,9 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE KindSignatures, GADTs, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
-module Effects.Logging where
+{-# LANGUAGE DeriveFunctor, KindSignatures, GADTs, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
+module Effects.Logging
+  ( Log, log, runLogIO, runLogFile )
+where
+
+import Prelude hiding (log)
 
 -- Fused effects things
 import Control.Algebra
@@ -45,17 +48,20 @@ data Log (m :: Type -> Type) k where
 log' :: Has Log sig m => Message -> m ()
 log' message = send (Write $ renderLogMessage message)
 
+log :: Has Log sig m => String -> m ()
+log message = log' (Info message)
+
 logInfo :: Has Log sig m => String -> m ()
 logInfo message = log' (Info message)
---
--- logWarn :: Has Log sig m => String -> m ()
--- logWarn message = log' (Warn message)
---
--- logError :: Has Log sig m => String -> m ()
--- logError message = log' (Error message)
---
--- logDebug :: Has Log sig m => String -> m ()
--- logDebug message = log' (Debug message)
+
+logWarn :: Has Log sig m => String -> m ()
+logWarn message = log' (Warn message)
+
+logError :: Has Log sig m => String -> m ()
+logError message = log' (Error message)
+
+logDebug :: Has Log sig m => String -> m ()
+logDebug message = log' (Debug message)
 
 --
 -- The logging effect carriers
@@ -69,10 +75,10 @@ newtype LogIO m a = LogIO
   { runLogIO :: m a }
   deriving (Applicative, Functor, Monad, MonadIO)
 
--- instance (MonadIO m, Algebra  sig m) => Algebra (Log String :+: sig) (LogIO m) where
---   alg handle sig context = case sig of
---     L (Write msg) -> context <$ liftIO (print msg)
---     R other       -> LogIO (alg (runLogIO . handle) other context)
+instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogIO m) where
+  alg handle sig context = case sig of
+    L (Write msg) -> context <$ liftIO (print msg)
+    R other       -> LogIO (alg (runLogIO . handle) other context)
 
 
 data LogWrapper = LogWrapper
@@ -85,7 +91,7 @@ instance Functor m => Applicative (LogFileCarrier m) where
 instance Functor m => Monad (LogFileCarrier m) where
 
 runLogFile :: FastLogger -> LogFileCarrier m a -> m a
-runLogFile r (LogFileCarrier runLogCarrier) = runLogCarrier r
+runLogFile logger (LogFileCarrier runLogCarrier) = runLogCarrier logger
 
 
 instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogFileCarrier m) where
@@ -94,7 +100,9 @@ instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogFileCarrier m)
     R other       -> alg (runLogFile logger . handle) other context
 
 
--- example usage
+--
+-- Example usage
+--
 application :: Has Log sig m => m ()
 application = do
   logInfo "hello"
