@@ -93,6 +93,8 @@ instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogFileCarrier m)
     L (Write msg) -> context <$ liftIO (logger $ toLogStr msg)
     R other       -> alg (runLogFile logger . handle) other context
 
+
+-- example usage
 application :: Has Log sig m => m ()
 application = do
   logInfo "hello"
