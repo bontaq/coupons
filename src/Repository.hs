@@ -21,38 +21,53 @@ data Expression
   | DateRange StartDate EndDate Expression
   | HasCoupon String            Expression
   | HasItem   MinAmount Sku     Expression
-  | Locale    Currency          Expression
+  | Locale    String            Expression
   -- Just for a bit of fun, allows expression of
   -- OneOf [Locale "USA" (Name "US"), Locale "DE" (Name "Germany")] (Name "US-or-Germany")
   | OneOf     [Expression]      Expression
   -- nicely requires any ruleset to end in name
   | Name      String
-  deriving Show
+  deriving (Generic, Show)
+
+instance ToJSON Expression where
+instance FromJSON Expression where
 
 data Target
   = Slug String
   | WholeCart
+  deriving (Generic, Show)
+
+instance ToJSON Target where
+instance FromJSON Target where
 
 data Result
   = AmountOff    Integer Target
   | PercentOff   Integer Target
   | FreeProduct  Sku
   | ReferralUsed String -- eh why not
+  deriving (Generic, Show)
+
+instance ToJSON Result where
+instance FromJSON Result where
 
 data Rule = Rule Expression [Result]
+  deriving (Generic, Show)
 
 -- query :: [Rule]
 query' = do
   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
-  [Only i] <- query_ conn "select expression from rules" :: IO [Only Value]
+  i <- query_ conn "select expression, result from rules" :: IO [(Value, Value)]
   print i
 
 -- insert :: Rule -> IO ()
 insert' = do
   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
+  let expression = encode $ BigSpend 500 (Name "Big Spenda")
+      result = encode $ AmountOff 1000 WholeCart
+
   execute conn
     "insert into rules (expression, result) values (?, ?)"
-    ("{}" :: String, "{}" :: String)
+    (expression, result)
   pure ()
 
 -- We can say:
