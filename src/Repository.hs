@@ -53,6 +53,9 @@ instance FromJSON Result where
 data Rule = Rule Expression [Result]
   deriving (Generic, Show)
 
+instance ToJSON Rule where
+instance FromJSON Rule where
+
 -- query :: [Rule]
 query' = do
   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
@@ -63,7 +66,7 @@ query' = do
 insert' = do
   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
   let expression = encode $ BigSpend 500 (Name "Big Spenda")
-      result = encode $ AmountOff 1000 WholeCart
+      result = encode $ [AmountOff 1000 WholeCart]
 
   execute conn
     "insert into rules (expression, result) values (?, ?)"

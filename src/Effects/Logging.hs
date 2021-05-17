@@ -75,7 +75,7 @@ newtype LogIO m a = LogIO
   { runLogIO :: m a }
   deriving (Applicative, Functor, Monad, MonadIO)
 
-instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogIO m) where
+instance (MonadIO m, Algebra sig m) => Algebra (Log :+: sig) (LogIO m) where
   alg handle sig context = case sig of
     L (Write msg) -> context <$ liftIO (print msg)
     R other       -> LogIO (alg (runLogIO . handle) other context)
