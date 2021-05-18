@@ -1,5 +1,3 @@
--- |
-
 module Effects.LoggingSpec where
 
 import Test.Hspec

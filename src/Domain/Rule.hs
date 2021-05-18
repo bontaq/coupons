@@ -19,22 +19,22 @@ data Expression
   | OneOf     [Expression]      Expression
   -- nicely requires any ruleset to end in name
   | Name      String
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data Target
   = Slug String
   | WholeCart
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data Result
   = AmountOff    Integer Target
   | PercentOff   Integer Target
   | FreeProduct  Slug
   | ReferralUsed String -- eh why not
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 data Rule = Rule Expression [Result]
-  deriving (Generic, Show)
+  deriving (Generic, Show, Eq)
 
 -- We can say:
 -- Rule

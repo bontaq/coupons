@@ -23,7 +23,7 @@ Tooling:
 todo:
 done - hspec
 done - database
-re-organize
+done - re-organize
 tests
 pick an automated formatter I GUESS
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFunctor, KindSignatures, GADTs, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
-module Repository where
+module Domain.RuleRepository where
 
 import Domain.Rule
 import Domain.Shared
@@ -123,6 +123,7 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
 ----------------------------------------------------------------
 
 newtype RuleState = RuleState { rules :: [Rule] }
+  deriving (Eq, Show)
 
 newtype RuleRepoState m a = RuleRepoState
   { runRuleRepo :: (StateC RuleState m) a }
