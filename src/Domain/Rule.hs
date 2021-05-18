@@ -1,26 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings #-}
--- | Getting and adding coupons
+module Domain.Rule where
 
-module Repository where
-
-import Models
-
--- Database Stuff
-import Database.PostgreSQL.Simple
 import GHC.Generics
-import Data.Aeson hiding (Result)
 
 type StartDate = Integer
 type EndDate = Integer
 type MinAmount = Integer
+type Slug = String
 
 data Expression
   = BigSpend  MinAmount         Expression
   | DateRange StartDate EndDate Expression
   | HasCoupon String            Expression
-  | HasItem   MinAmount Sku     Expression
+  | HasItem   MinAmount Slug    Expression
   | Locale    String            Expression
   -- Just for a bit of fun, allows expression of
   -- OneOf [Locale "USA" (Name "US"), Locale "DE" (Name "Germany")] (Name "US-or-Germany")
@@ -29,49 +21,20 @@ data Expression
   | Name      String
   deriving (Generic, Show)
 
-instance ToJSON Expression where
-instance FromJSON Expression where
-
 data Target
   = Slug String
   | WholeCart
   deriving (Generic, Show)
 
-instance ToJSON Target where
-instance FromJSON Target where
-
 data Result
   = AmountOff    Integer Target
   | PercentOff   Integer Target
-  | FreeProduct  Sku
+  | FreeProduct  Slug
   | ReferralUsed String -- eh why not
   deriving (Generic, Show)
 
-instance ToJSON Result where
-instance FromJSON Result where
-
 data Rule = Rule Expression [Result]
   deriving (Generic, Show)
-
-instance ToJSON Rule where
-instance FromJSON Rule where
-
--- query :: [Rule]
-query' = do
-  conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
-  i <- query_ conn "select expression, result from rules" :: IO [(Value, Value)]
-  print i
-
--- insert :: Rule -> IO ()
-insert' = do
-  conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
-  let expression = encode $ BigSpend 500 (Name "Big Spenda")
-      result = encode $ [AmountOff 1000 WholeCart]
-
-  execute conn
-    "insert into rules (expression, result) values (?, ?)"
-    (expression, result)
-  pure ()
 
 -- We can say:
 -- Rule
@@ -89,7 +52,3 @@ insert' = do
 -- Rule
 --   DateRange mothers-day-start mothers-day-end (HasItem "bike-package" (Name "Mother's day"))
 --   [AmountOff 50 (Slug "shoes"), FreeProduct "mat"]
-
--- getCouponsForSku :: Sku -> [Coupon]
-
-getCouponsForSku = undefined

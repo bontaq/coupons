@@ -39,7 +39,7 @@ executables:
 tests:
   coupons-test:
     main:                Spec.hs
-    source-dirs:         test
+    source-dirs:         src
     ghc-options:
     - -threaded
     - -rtsopts

@@ -7,7 +7,7 @@ Effects: fused-effects (used by github for its semantics project)
 Server: wai (performance on par with nginx)
 Logging: fast-logger (logging that scales with multiple cores, supports files & rotation)
 Migrations: postgresql-simple-migrations (temporary, I'd recommend something else like liquibase, but it works)
-Persistence: postgresql-simple (other, more magical/productive options I didn't like as much, the simplicity of it's a win to me)
+Persistence: postgresql-simple (other, more magical/productive options with better safety I didn't like as much, the simplicity of it's a win to me)
 Testing: hspec (standard)
 
 automated formatting: fourmolo, ormolu, floskell, stylish-haskell
@@ -19,7 +19,10 @@ Tooling:
 
 todo:
 done - hspec
-database
+done - database
+re-organize
+tests
+pick an automated formatter I GUESS
 
 bumps:
 - had to install libpq-dev so postgresql-simple would build (ubuntu)

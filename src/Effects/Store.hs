@@ -13,6 +13,7 @@ import Data.Kind (Type)
 -- Postgreql-simple
 import Database.PostgreSQL.Simple
 import Data.ByteString.Char8
+-- For handling the jsonb
 import Data.Aeson
 import Data.Aeson.Parser
 
@@ -29,7 +30,7 @@ import Data.Aeson.Parser
 -- fetch :: Has Store
 
 -- select
-import Repository
+-- import Repository
 
 data RuleRepo (m :: Type -> Type) k where
   AddRule    :: Rule -> RuleRepo m ()
@@ -44,6 +45,11 @@ updateRule oldRule newRule = send (UpdateRule oldRule newRule)
 
 getRules :: Has RuleRepo sig m => m (Either String [Rule])
 getRules = send GetRules
+
+
+--
+--
+--
 
 toEither :: Data.Aeson.Result a -> Either String a
 toEither result = case result of
@@ -67,9 +73,11 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
       psqlConnectionString <- ask
       conn <- liftIO $ connectPostgreSQL psqlConnectionString
 
-      rawRows <- liftIO (query_ conn "select expression, result from rules" :: IO [(Value, Value)])
+      rawRows <-
+        liftIO (query_ conn "select expression, result from rules" :: IO [(Value, Value)])
 
       let result = mapM handleToRule rawRows
+
       pure $ result <$ ctx
 
 
