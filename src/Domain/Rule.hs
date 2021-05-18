@@ -26,14 +26,14 @@ data Target
   | WholeCart
   deriving (Generic, Show, Eq)
 
-data Result
+data Action
   = AmountOff    Integer Target
   | PercentOff   Integer Target
   | FreeProduct  Slug
   | ReferralUsed String -- eh why not
   deriving (Generic, Show, Eq)
 
-data Rule = Rule Expression [Result]
+data Rule = Rule Expression [Action]
   deriving (Generic, Show, Eq)
 
 -- We can say:

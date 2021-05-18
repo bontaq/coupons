@@ -19,8 +19,7 @@ import Database.PostgreSQL.Simple
 import Data.ByteString.Char8
 
 -- JSON handling
-import Data.Aeson hiding (Result)
-import qualified Data.Aeson
+import Data.Aeson
 
 --
 -- I guess you would call this the mapping layer so that we
@@ -33,8 +32,8 @@ instance FromJSON Expression where
 instance ToJSON Target where
 instance FromJSON Target where
 
-instance ToJSON Result where
-instance FromJSON Result where
+instance ToJSON Action where
+instance FromJSON Action where
 
 instance ToJSON Rule where
 instance FromJSON Rule where
@@ -71,7 +70,7 @@ newtype RuleRepoIO m a = RuleRepoIO
 --
 -- Helpers
 --
-toEither :: Data.Aeson.Result a -> Either Error a
+toEither :: Result a -> Either Error a
 toEither result = case result of
   Success a -> Right a
   Error str -> Left str
