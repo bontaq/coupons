@@ -65,7 +65,7 @@ data RuleRepo (m :: Type -> Type) k where
 --------------------------------------------------
 
 newtype RuleRepoIO m a = RuleRepoIO
-  { runRuleRepoIO :: (ReaderC ConnectInfo m) a }
+  { runRuleRepoIO :: (ReaderC Connection m) a }
   deriving (Applicative, Functor, Monad, MonadIO)
 
 --
@@ -88,10 +88,9 @@ handleToRule (expression, result) =
 --
 instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m) where
   alg handle sig ctx = RuleRepoIO $ do
-    -- it expects the ConnectInfo from a reader monad
-    connectionString <- postgreSQLConnectionString <$> ask
-    -- the actual connection
-    conn <- liftIO $ connectPostgreSQL connectionString
+    -- it expects a connection from a reader monad -- look at the tests, it's not too wild
+    -- and allows us to do weirder things than if we got the connection here
+    conn <- ask @Connection
 
     -- handling interpretation of messages from the definition
     case sig of

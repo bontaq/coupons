@@ -1,6 +1,6 @@
 # Coupon Service
 
-Luxury tour of where Haskell is at from a production ready standpoint and so I can learn how to use Effects.
+A tour of where Haskell is at from a production ready standpoint
 
 Effects: fused-effects (used by github for its semantics project)
 
@@ -30,4 +30,11 @@ pick an automated formatter I GUESS
 bumps:
 - had to install libpq-dev so postgresql-simple would build (ubuntu)
 - haskell language server climbed to ~5GB ram use over 12 hrs working on this
+-- after another day it has climbed to ~10GB ram
 -- Strangely GHCi (the repl) uses only 80MB ram even after awhile using
+- had to make sure initdb was on my path in order to acquire a temp db which
+  I'm using to run tests like a madman
+  was in /usr/lib/postgresql/12/bin (still ubuntu)
+
+wonder:
+- parallel tests with a real database run in less than a second
