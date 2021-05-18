@@ -36,5 +36,13 @@ bumps:
   I'm using to run tests like a madman
   was in /usr/lib/postgresql/12/bin (still ubuntu)
 
+good:
+- haskell language server has very good built in warnings via hlint
+-- for example, I had "catMaybes . fmap (evalRule cart)"
+-- and it suggested
+-- mapMaybe (evalRule cart)
+-- certainly good enough suggestions to make me seem like a better haskell programmer
+
 wonder:
 - parallel tests with a real database run in less than a second
+- build and running tests takes < 5 s
