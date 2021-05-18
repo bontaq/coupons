@@ -1,16 +1,19 @@
 # Coupon Service
 
-### Luxury tour of where Haskell is at from a production ready standpoint
-#### And so I can learn how to use Effects
+Luxury tour of where Haskell is at from a production ready standpoint and so I can learn how to use Effects.
 
 Effects: fused-effects (used by github for its semantics project)
+
 Server: wai (performance on par with nginx)
+
 Logging: fast-logger (logging that scales with multiple cores, supports files & rotation)
+
 Migrations: postgresql-simple-migrations (temporary, I'd recommend something else like liquibase, but it works)
+
 Persistence: postgresql-simple (other, more magical/productive options with better safety I didn't like as much, the simplicity of it's a win to me)
 Testing: hspec (standard)
 
-automated formatting: fourmolo, ormolu, floskell, stylish-haskell
+Automated formatting options: fourmolo, ormolu, floskell, stylish-haskell
 
 Tooling: 
 - GHCi
