@@ -51,7 +51,8 @@ spec = parallel $ do
   describe "RuleRepoIO" $ do
     --
     -- For testing we're creating a temporary DB, migrating it,
-    -- and then running each test inside a transaction.
+    -- and then running each test inside a transaction. This could
+    -- all be moved into Helpers
     --
 
     let dbOrCrash value = case value of
@@ -75,6 +76,7 @@ spec = parallel $ do
         rollback conn -- and then roll back the transaction when the test is over
         close conn
 
+      -- the magic that runs the open action before the test, and runs close after
       withDBConnection =
         bracket (openConnection $ toConnectionString tempDB) closeConnection
 
@@ -82,6 +84,15 @@ spec = parallel $ do
         stop tempDB
         putStrLn "\nTemp DB removed"
 
+    --
+    -- The actual tests
+    --
+    -- afterAll runs after the test block is done, removing the temp db
+    --
+    -- around passes into each test the connection to the db,
+    -- opening it before and closing it after the test has run. It also
+    -- handles the opening & rollback of the transaction.
+    --
     afterAll destroyTempDB $ around withDBConnection $ do
 
       let mkRepo dbConn = runM . runReader dbConn . runRuleRepoIO
