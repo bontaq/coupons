@@ -17,7 +17,7 @@ import Control.Monad.IO.Class (MonadIO(..))
 import Data.Kind (Type)
 
 -- Database
-import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Simple hiding (In)
 import Data.ByteString.Char8 hiding (concat, concatMap, filter)
 
 -- JSON handling
@@ -31,6 +31,12 @@ import Data.Maybe
 -- can transform our rules into and out of JSON for storing
 -- as jsonb fields
 --
+instance ToJSON CodeOrItem where
+instance FromJSON CodeOrItem where
+
+instance ToJSON Place where
+instance FromJSON Place where
+
 instance ToJSON Expression where
 instance FromJSON Expression where
 
@@ -94,11 +100,10 @@ handleToRule (expression, result) =
 -- TODO: could this be cleaned up with a traversable definition?
 getCodes :: Expression -> [Code]
 getCodes expr = case expr of
-  (HasCode code _)     -> [code]
-  (DateRange _ _ expr) -> getCodes expr
-  (MinSpend _ expr)    -> getCodes expr
-  (HasItem _ _ expr)   -> getCodes expr
-  (Locale _ expr)      -> getCodes expr
+  (Has (Code code) _)  -> [code]
+  (Has _ expr)         -> getCodes expr
+  (Between _ _ expr) -> getCodes expr
+  (In _ expr)      -> getCodes expr
   (OneOf exprs expr)   -> concatMap getCodes (expr : exprs)
   Name _               -> []
 

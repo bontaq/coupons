@@ -3,24 +3,42 @@ module Domain.Rule where
 
 import GHC.Generics
 
+import Domain.Shared
+
 type StartDate = Integer
 type EndDate = Integer
 type MinAmount = Integer
+type Count = Integer
 type Slug = String
-type Code = String
+
+data CodeOrItem
+  = Code Code
+  | One Slug
+  | Two Slug
+  deriving (Generic, Show, Eq)
+
+newtype Place = Country String
+  deriving (Generic, Show, Eq)
 
 data Expression
-  = MinSpend  MinAmount         Expression
-  | DateRange StartDate EndDate Expression
-  | HasCode   Code              Expression
-  | HasItem   MinAmount Slug    Expression
-  | Locale    String            Expression
-  -- Just for a bit of fun, allows expression of
-  -- OneOf [Locale "USA" (Name "US"), Locale "DE" (Name "Germany")] (Name "US-or-Germany")
-  | OneOf     [Expression]      Expression
-  -- nicely requires any ruleset to end in name
-  | Name      String
+  = Between StartDate EndDate Expression
+  | Has     CodeOrItem        Expression
+  | In      [Place]           Expression
+  | OneOf   [Expression]      Expression
+  | Name    String
   deriving (Generic, Show, Eq)
+
+-- Thoughts / examples:
+-- Has (One "bike-package"), Has (Code "coupon-code")
+-- Has (One "shoe") (In [Locale "US"] (Name "shoe-coupon"))
+-- Between "may-16" "may-22"
+--   (In [Locale "US", Locale "GB"] (Has (One "bike-package") (Name "happy spring coupon")))
+
+-- other expression ideas
+-- - MinSpend
+-- - Count (this would require some level of actual parsing,
+--          ie it removes the item on success)
+-- -
 
 data Target
   = Slug String
@@ -39,17 +57,17 @@ data Rule = Rule Expression [Action]
 
 -- We can say:
 -- Rule
---   (HasItem 2 "bike" (Name "M-multiple bikes"))
+--   (Has 2 "bike" (Name "M-multiple bikes"))
 --   [AmountOff 150 WholeCart]
 -- or
 -- Rule
---   Locale USA (DateRange (May 16) (May 22) (HasItem "bike" (Name "People like hats")))
+--   Locale USA (DateRange (May 16) (May 22) (Has 1 "bike" (Name "People like hats")))
 --   [FreeProduct "hat"]
 -- or
 -- Rule
---   HasCoupon "sakib42" (Name "sakib42")
+--   HasCode "sakib42" (Name "sakib42")
 --   [AmountOff 50 WholeCart]
 -- or
 -- Rule
---   DateRange mothers-day-start mothers-day-end (HasItem "bike-package" (Name "Mother's day"))
+--   DateRange mothers-day-start mothers-day-end (Has 1 "bike-package" (Name "Mother's day"))
 --   [AmountOff 50 (Slug "shoes"), FreeProduct "mat"]

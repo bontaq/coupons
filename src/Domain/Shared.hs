@@ -1,5 +1,7 @@
 module Domain.Shared where
 
+type Code = String
+
 type Error = String
 
 data RepoError
