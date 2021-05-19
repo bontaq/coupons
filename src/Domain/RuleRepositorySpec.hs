@@ -18,9 +18,50 @@ import Domain.Rule
 
 
 spec = parallel $ do
+  describe "getCode" $ do
+    it "finds code in HasCode" $ do
+      getCode (HasCode "test" $ Name "")
+        `shouldBe`
+        Just ["test"]
+
+    it "finds the codes in OneOf" $ do
+      getCode (OneOf [HasCode "test" $ Name "", HasCode "2" $ Name ""] $ Name "")
+        `shouldBe`
+        Just ["test", "2"]
+
+    it "finds a code in DateRange" $ do
+      getCode (DateRange 0 0 (HasCode "test" $ Name ""))
+        `shouldBe`
+        Just ["test"]
+
+    it "finds a code in MinSpend" $ do
+      getCode (MinSpend 0 (HasCode "test" $ Name ""))
+        `shouldBe`
+        Just ["test"]
+
+    it "finds a code in HasItem" $ do
+      getCode (HasItem 1 "bike" (HasCode "test" $ Name ""))
+        `shouldBe`
+        Just ["test"]
+
+    it "finds a code in Locale" $ do
+      getCode (Locale "US" (HasCode "test" $ Name ""))
+        `shouldBe`
+        Just ["test"]
+
+    it "doesn't find a code in Name" $ do
+      getCode (Name "")
+        `shouldBe`
+        Nothing
+
+    it "finds a nested code" $ do
+      getCode (Locale "US" $ HasItem 1 "bike" $ MinSpend 1000 $ HasCode "test" $ Name "")
+        `shouldBe`
+        Just ["test"]
+
   describe "RuleRepoState" $ do
 
-    let emptyState = RuleState { rules=[] }
+    let emptyState = RuleState { rules=[], closedRules=[] }
         repo = run . execState emptyState . runRuleRepo
         repoWithState state = run . execState state . runRuleRepo
 
@@ -31,21 +72,21 @@ spec = parallel $ do
 
         repo (addRule newRule)
           `shouldBe`
-          RuleState { rules=[newRule] }
+          RuleState { rules=[newRule], closedRules=[] }
 
     describe "getRules" $ do
 
       it "Returns a list of all rules (empty state)" $ do
         repo getRules
           `shouldBe`
-          RuleState { rules=[] }
+          RuleState { rules=[], closedRules=[] }
 
       it "Returns a list of all rules (state with a rule in it)" $ do
         let stateWithRule = emptyState { rules=[Rule (Name "test") []] }
 
         repoWithState stateWithRule getRules
           `shouldBe`
-          RuleState { rules=[Rule (Name "test") []] }
+          RuleState { rules=[Rule (Name "test") []], closedRules=[] }
 
 
   describe "RuleRepoIO" $ do

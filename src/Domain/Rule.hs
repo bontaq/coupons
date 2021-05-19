@@ -7,11 +7,12 @@ type StartDate = Integer
 type EndDate = Integer
 type MinAmount = Integer
 type Slug = String
+type Code = String
 
 data Expression
-  = BigSpend  MinAmount         Expression
+  = MinSpend  MinAmount         Expression
   | DateRange StartDate EndDate Expression
-  | HasCoupon String            Expression
+  | HasCode   Code              Expression
   | HasItem   MinAmount Slug    Expression
   | Locale    String            Expression
   -- Just for a bit of fun, allows expression of
