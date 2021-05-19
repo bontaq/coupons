@@ -100,12 +100,12 @@ handleToRule (expression, result) =
 -- TODO: could this be cleaned up with a traversable definition?
 getCodes :: Expression -> [Code]
 getCodes expr = case expr of
-  (Has (Code code) _)  -> [code]
-  (Has _ expr)         -> getCodes expr
-  (Between _ _ expr) -> getCodes expr
-  (In _ expr)      -> getCodes expr
-  (OneOf exprs expr)   -> concatMap getCodes (expr : exprs)
-  Name _               -> []
+  (Has (Code code) _) -> [code]
+  (Has _ expr)        -> getCodes expr
+  (Between _ _ expr)  -> getCodes expr
+  (In _ expr)         -> getCodes expr
+  (OneOf exprs expr)  -> concatMap getCodes (expr : exprs)
+  Is _                -> []
 
 --
 -- Actually specifying how to handle the effect definition and talking to postgres

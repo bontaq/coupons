@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Domain.Prerequisites where
+module Domain.Context where
 
 import GHC.Records
 import GHC.OverloadedLabels (IsLabel(..))
@@ -22,11 +22,11 @@ data Bundle = Bundle
   , slug  :: String
   }
 
-data Item = Item
+newtype Item = Item
   { slug :: String
   }
 
-data Prerequisites = Prerequisites
+data Context = Context
   { items    :: [Item]
   , bundles  :: [Bundle]
   , location :: Maybe String

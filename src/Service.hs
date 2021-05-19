@@ -16,32 +16,54 @@ import Data.List
 import Data.Aeson
 import Data.Maybe
 
-import Domain.Prerequisites
+import Domain.Context
 import Domain.RuleRepository
 import Domain.Rule
 import Domain.Shared
 
 import Database.PostgreSQL.Simple
 
-evalExpression :: Prerequisites -> Expression -> Maybe Code
-evalExpression prerequisites expr = case expr of
+getAllSlugs :: Context -> [Slug]
+getAllSlugs Context{ items, bundles } =
+  let collectSlugs = fmap #slug
+      bundleItemSlugs = fmap (collectSlugs . #bundleItems) bundles
+      bundleSlugs = fmap #slug bundles
+      itemSlugs = collectSlugs items
+  in itemSlugs <> concat bundleItemSlugs <> bundleSlugs
+
+
+evalExpression :: Context -> Expression -> Maybe Code
+evalExpression context expr = case expr of
   -- base case or goal, if all rules match then it gets to the rule's Name
-  Name code -> Just code
+  Is code -> Just code
+
   Has (Code code) expr ->
-    if code `elem` codes prerequisites then
+    if code `elem` codes context then
       -- it passed this rule, so we continue evaluating
-      evalExpression prerequisites expr
+      evalExpression context expr
     else
       -- it didn't have the code, so we stop evaluating
       Nothing
 
+  Has (One slug) expr ->
+    if slug `elem` getAllSlugs context then
+      evalExpression context expr
+    else
+      Nothing
 
--- evalRule :: Prerequisites -> Expression -> Maybe (Code, [Action])
+  Has (Two slug) expr ->
+    if length $ filter (== slug) (getAllSlugs context) >= 2 then
+      evalExpression context expr
+    else
+      Nothing
+
+
+-- evalRule :: Context -> Expression -> Maybe (Code, [Action])
 -- evalRule p rule = do
 --   print ""
 --
 -- evalRule _ (Rule (Name couponCode) actions) = Just (couponCode, actions)
--- evalRule p@Prerequisites { codes } (Rule (HasCode code rest) actions) =
+-- evalRule p@Context { codes } (Rule (HasCode code rest) actions) =
 --   case find (== code) codes of
 --     Just _  -> Just (code, actions)
 --     Nothing -> evalRule p (Rule rest actions)
@@ -50,7 +72,7 @@ evalExpression prerequisites expr = case expr of
 --     ( Has Log sig m
 --     , Has RuleRepo sig m
 --     )
---   => Prerequisites -> m [Action]
+--   => Context -> m [Action]
 -- getDiscounts cart codes = do
 --   log $ "Finding discounts for cart " <> #id cart <> " and coupon codes " <> show codes
 --

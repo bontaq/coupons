@@ -25,14 +25,14 @@ data Expression
   | Has     CodeOrItem        Expression
   | In      [Place]           Expression
   | OneOf   [Expression]      Expression
-  | Name    String
+  | Is      Code
   deriving (Generic, Show, Eq)
 
 -- Thoughts / examples:
--- Has (One "bike-package"), Has (Code "coupon-code")
--- Has (One "shoe") (In [Locale "US"] (Name "shoe-coupon"))
+-- Has (One "bike-package"), Has (Is "coupon-code")
+-- Has (One "shoe") (In [Locale "US"] (Is "shoe-coupon"))
 -- Between "may-16" "may-22"
---   (In [Locale "US", Locale "GB"] (Has (One "bike-package") (Name "happy spring coupon")))
+--   (In [Locale "US", Locale "GB"] (Has (One "bike-package") (Is "happy spring coupon")))
 
 -- other expression ideas
 -- - MinSpend

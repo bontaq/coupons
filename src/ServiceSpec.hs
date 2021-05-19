@@ -9,7 +9,7 @@ import Service
 
 spec = parallel $ do
 
-  describe "evalRule" $ do
+  describe "evalExpression" $ do
 
     let spec = Prerequisites
           { items = []
@@ -19,9 +19,10 @@ spec = parallel $ do
           }
 
     it "works for the anything-case" $ do
-      evalExpression spec (Name "test")
+      evalExpression spec (Is "this coupon code")
         `shouldBe`
-        Just "test"
+        Just "this coupon code"
+
 
 
 main = hspec spec
