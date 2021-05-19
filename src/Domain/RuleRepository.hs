@@ -16,7 +16,7 @@ import Data.Kind (Type)
 
 -- Database
 import Database.PostgreSQL.Simple
-import Data.ByteString.Char8 hiding (concat)
+import Data.ByteString.Char8 hiding (concat, concatMap)
 
 -- JSON handling
 import Data.Aeson
@@ -49,8 +49,11 @@ instance FromJSON Rule where
 addRule :: Has RuleRepo sig m => Rule -> m ()
 addRule rule = send (AddRule rule)
 
-getRules :: Has RuleRepo sig m => m (Either Error [Rule])
-getRules = send GetOpenRules
+getOpenRules :: Has RuleRepo sig m => m (Either Error [Rule])
+getOpenRules = send GetOpenRules
+
+getClosedRule :: Has RuleRepo sig m => Code -> m (Either Error Rule)
+getClosedRule code = send (GetClosedRule code)
 
 
 ----------------------------------------------------------
@@ -86,23 +89,15 @@ handleToRule :: (Value, Value) -> Either Error Rule
 handleToRule (expression, result) =
   Rule <$> parse expression <*> parse result
 
-getCode :: Expression -> Maybe [Code]
+getCode :: Expression -> [Code]
 getCode expr = case expr of
-  (HasCode code _)     -> Just [code]
+  (HasCode code _)     -> [code]
   (DateRange _ _ expr) -> getCode expr
   (MinSpend _ expr)    -> getCode expr
   (HasItem _ _ expr)   -> getCode expr
   (Locale _ expr)      -> getCode expr
-  (OneOf exprs expr)   ->
-    -- TODO: this should be more elegant
-    -- collect any codes from exprs or expr
-    let
-      possibleCodes = concat $ mapMaybe getCode (expr:exprs)
-    in
-      case possibleCodes of
-        [] -> Nothing
-        _  -> Just possibleCodes
-  Name _               -> Nothing
+  (OneOf exprs expr)   -> concatMap getCode (expr : exprs)
+  Name _               -> []
 
 --
 -- Actually specifying how to handle the effect definition and talking to postgres
@@ -141,6 +136,10 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
           _      -> pure $ Left "Too many results" <$ ctx
 
       L (AddRule (Rule expression result)) -> do
+        -- if the rule expression has a code, we put it into closed_rules
+        let
+          codes = getCode expression
+
         liftIO $
           execute conn
             "insert into rules (expression, result) values (?, ?)"
@@ -180,9 +179,6 @@ instance Algebra sig m => Algebra (RuleRepo :+: sig) (RuleRepoState m) where
 
     L (GetClosedRule code) -> do
       rules <- closedRules <$> get
-
-      -- gotta do a filter
-
 
       case rules of
         [rule] -> pure $ Right rule <$ ctx

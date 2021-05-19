@@ -22,42 +22,42 @@ spec = parallel $ do
     it "finds code in HasCode" $ do
       getCode (HasCode "test" $ Name "")
         `shouldBe`
-        Just ["test"]
+        ["test"]
 
     it "finds the codes in OneOf" $ do
       getCode (OneOf [HasCode "test" $ Name "", HasCode "2" $ Name ""] $ Name "")
         `shouldBe`
-        Just ["test", "2"]
+        ["test", "2"]
 
     it "finds a code in DateRange" $ do
       getCode (DateRange 0 0 (HasCode "test" $ Name ""))
         `shouldBe`
-        Just ["test"]
+        ["test"]
 
     it "finds a code in MinSpend" $ do
       getCode (MinSpend 0 (HasCode "test" $ Name ""))
         `shouldBe`
-        Just ["test"]
+        ["test"]
 
     it "finds a code in HasItem" $ do
       getCode (HasItem 1 "bike" (HasCode "test" $ Name ""))
         `shouldBe`
-        Just ["test"]
+        ["test"]
 
     it "finds a code in Locale" $ do
       getCode (Locale "US" (HasCode "test" $ Name ""))
         `shouldBe`
-        Just ["test"]
+        ["test"]
 
     it "doesn't find a code in Name" $ do
       getCode (Name "")
         `shouldBe`
-        Nothing
+        []
 
     it "finds a nested code" $ do
       getCode (Locale "US" $ HasItem 1 "bike" $ MinSpend 1000 $ HasCode "test" $ Name "")
         `shouldBe`
-        Just ["test"]
+        ["test"]
 
   describe "RuleRepoState" $ do
 
@@ -74,17 +74,17 @@ spec = parallel $ do
           `shouldBe`
           RuleState { rules=[newRule], closedRules=[] }
 
-    describe "getRules" $ do
+    describe "getOpenRules" $ do
 
       it "Returns a list of all rules (empty state)" $ do
-        repo getRules
+        repo getOpenRules
           `shouldBe`
           RuleState { rules=[], closedRules=[] }
 
       it "Returns a list of all rules (state with a rule in it)" $ do
         let stateWithRule = emptyState { rules=[Rule (Name "test") []] }
 
-        repoWithState stateWithRule getRules
+        repoWithState stateWithRule getOpenRules
           `shouldBe`
           RuleState { rules=[Rule (Name "test") []], closedRules=[] }
 
@@ -147,17 +147,17 @@ spec = parallel $ do
 
           repo (addRule newRule)
 
-          rules <- repo getRules
+          rules <- repo getOpenRules
           rules
             `shouldBe`
             Right [newRule]
 
-      describe "getRules" $ do
+      describe "getOpenRules" $ do
 
         it "Returns a list of all rules (empty state)" $ \connection -> do
           let repo = mkRepo connection
 
-          rules <- repo getRules
+          rules <- repo getOpenRules
           rules `shouldBe` Right []
 
         it "Returns a list of all rules (after adding a rule)" $ \connection -> do
@@ -169,7 +169,7 @@ spec = parallel $ do
           repo (addRule newRule)
           repo (addRule newRule)
 
-          rules <- repo getRules
+          rules <- repo getOpenRules
           rules
             `shouldBe`
             Right [newRule, newRule]
