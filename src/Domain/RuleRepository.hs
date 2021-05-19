@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -17,7 +18,7 @@ import Data.Kind (Type)
 
 -- Database
 import Database.PostgreSQL.Simple
-import Data.ByteString.Char8 hiding (concat, concatMap)
+import Data.ByteString.Char8 hiding (concat, concatMap, filter)
 
 -- JSON handling
 import Data.Aeson
@@ -90,6 +91,7 @@ handleToRule :: (Value, Value) -> Either Error Rule
 handleToRule (expression, result) =
   Rule <$> parse expression <*> parse result
 
+-- TODO: could this be cleaned up with a traversable definition?
 getCodes :: Expression -> [Code]
 getCodes expr = case expr of
   (HasCode code _)     -> [code]
@@ -163,7 +165,7 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
 -- A Pure Effect interpreter that just uses a Record and List --
 ----------------------------------------------------------------
 
-data RuleState = RuleState { rules :: [Rule], closedRules :: [Rule] }
+data RuleState = RuleState { rules :: [Rule], closedRules :: [(Rule, Code)] }
   deriving (Eq, Show)
 
 newtype RuleRepoState m a = RuleRepoState
@@ -177,21 +179,31 @@ instance Algebra sig m => Algebra (RuleRepo :+: sig) (RuleRepoState m) where
       -- Remember it returns an Either, this is just always Right
       pure $ Right rules <$ ctx
 
-    L (AddRule newRule) -> do
-      oldRules <- rules <$> get
+    L (AddRule newRule@(Rule expression actions)) -> do
 
-      -- set the state with the new rule at front
-      put $ RuleState { rules = newRule : oldRules, closedRules = [] }
+      let codes = getCodes expression
+      case codes of
+        [] -> do
+          -- set the state with the new rule at front
+          modify (\RuleState { rules, closedRules } ->
+                    RuleState { rules=newRule:rules, closedRules=closedRules })
+        codes' -> do
+          let newRules = fmap (newRule,) codes'
+          modify (\RuleState { rules, closedRules } ->
+                    RuleState { rules=rules, closedRules=newRules <> closedRules })
 
       -- TODO: I should return an Either Error Rule for adding a Rule
       ctx <$ pure ()
 
     L (GetClosedRule code) -> do
-      rules <- closedRules <$> get
+      rules <- filter (\(_, code') -> code' == code) . closedRules <$> get
 
-      case rules of
-        [rule] -> pure $ Right rule <$ ctx
-        _      -> pure $ Left TooManyResults <$ ctx
+      let result = case rules of
+            [(rule, code)] -> Right rule
+            []             -> Left DoesNotExist
+            _              -> Left TooManyResults
+
+      pure $ result <$ ctx
 
     R other -> alg (runRuleRepo . handle) (R other) ctx
 

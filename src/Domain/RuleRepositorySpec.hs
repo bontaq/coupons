@@ -19,7 +19,9 @@ import Domain.Shared
 
 
 spec = parallel $ do
+
   describe "getCodes" $ do
+
     it "finds code in HasCode" $ do
       getCodes (HasCode "test" $ Name "")
         `shouldBe`
@@ -74,6 +76,34 @@ spec = parallel $ do
         repo (addRule newRule)
           `shouldBe`
           RuleState { rules=[newRule], closedRules=[] }
+
+      it "Stores a new closed rule" $ do
+        let closedRule = Rule (HasCode "sakib42" (Name "test")) []
+
+        repo (addRule closedRule)
+          `shouldBe`
+          RuleState { rules=[], closedRules=[(closedRule, "sakib42")] }
+
+    describe "getClosedRule" $ do
+
+      it "gets a rule by code" $ do
+        let closedRule = Rule (HasCode "sakib42" (Name "test")) []
+            -- evalState is so we get the result instead of the
+            -- new state at the end of the do block
+            repo = runM . evalState emptyState . runRuleRepo
+
+        r <- repo $ do
+          addRule closedRule
+          getClosedRule "sakib42"
+
+        r `shouldBe` Right closedRule
+
+      it "returns a DNE for no matches" $ do
+        let repo = run . evalState emptyState . runRuleRepo
+
+        repo (getClosedRule "sakib42")
+          `shouldBe`
+          Left DoesNotExist
 
     describe "getOpenRules" $ do
 
@@ -222,5 +252,5 @@ spec = parallel $ do
             `shouldBe`
             Right [newRule, newRule]
 
-
+-- for running from the repl
 main = hspec spec
