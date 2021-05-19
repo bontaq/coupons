@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveFunctor, KindSignatures, GADTs, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
@@ -52,7 +53,7 @@ addRule rule = send (AddRule rule)
 getOpenRules :: Has RuleRepo sig m => m (Either Error [Rule])
 getOpenRules = send GetOpenRules
 
-getClosedRule :: Has RuleRepo sig m => Code -> m (Either Error Rule)
+getClosedRule :: Has RuleRepo sig m => Code -> m (Either RepoError Rule)
 getClosedRule code = send (GetClosedRule code)
 
 
@@ -63,7 +64,7 @@ getClosedRule code = send (GetClosedRule code)
 data RuleRepo (m :: Type -> Type) k where
   AddRule       :: Rule -> RuleRepo m ()
   GetOpenRules  :: RuleRepo m (Either Error [Rule])
-  GetClosedRule :: Code -> RuleRepo m (Either Error Rule)
+  GetClosedRule :: Code -> RuleRepo m (Either RepoError Rule)
 
 
 --------------------------------------------------
@@ -129,21 +130,29 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
                    "select expression, result from closed_rules where code = ?"
                    (Only code) :: IO [(Value, Value)])
 
-        let result = fmap handleToRule rawRows
+        let result = case fmap handleToRule rawRows of
+              [rule] -> case rule of
+                Right rule' -> Right rule'
+                Left  err   -> Left (DatabaseErr err)
+              []     -> Left DoesNotExist
+              _      -> Left TooManyResults
 
-        case result of
-          [rule] -> pure $ rule <$ ctx
-          _      -> pure $ Left "Too many results" <$ ctx
+        pure $ result <$ ctx
 
       L (AddRule (Rule expression result)) -> do
-        -- if the rule expression has a code, we put it into closed_rules
-        let
-          codes = getCodes expression
+        -- if the rule expression has codes, we put it into closed_rules
+        let codes = getCodes expression
 
-        liftIO $
-          execute conn
-            "insert into rules (expression, result) values (?, ?)"
-            (encode expression, encode result)  -- turn them into JSON
+        case codes of
+          [] ->
+            liftIO $
+              execute conn
+                "insert into rules (expression, result) values (?, ?)"
+                (encode expression, encode result)  -- turn them into JSON
+          codes ->
+            liftIO $ executeMany conn
+              "insert into closed_rules (expression, result, code) values (?, ?, ?)"
+              (fmap (encode expression, encode result,) codes)
 
         ctx <$ pure ()
 
@@ -182,7 +191,7 @@ instance Algebra sig m => Algebra (RuleRepo :+: sig) (RuleRepoState m) where
 
       case rules of
         [rule] -> pure $ Right rule <$ ctx
-        _      -> pure $ Left "Too many results" <$ ctx
+        _      -> pure $ Left TooManyResults <$ ctx
 
     R other -> alg (runRuleRepo . handle) (R other) ctx
 

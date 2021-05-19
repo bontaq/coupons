@@ -15,6 +15,7 @@ import Test.Hspec
 import Helpers.Migrate
 import Domain.RuleRepository
 import Domain.Rule
+import Domain.Shared
 
 
 spec = parallel $ do
@@ -151,6 +152,53 @@ spec = parallel $ do
           rules
             `shouldBe`
             Right [newRule]
+
+        it "Stores a rule with a code as a closed rule" $ \connection -> do
+          let
+            ruleWithCode = Rule (HasCode "sakib42" (Name "sakib42-coupon")) []
+            repo = mkRepo connection
+
+          repo (addRule ruleWithCode)
+
+          openRules <- repo getOpenRules
+          openRules `shouldBe` Right []
+          closedRule <- repo (getClosedRule "sakib42")
+          closedRule `shouldBe` Right ruleWithCode
+
+        it "Stores a rule with multiple codes as separate closed rules" $ \connection -> do
+          let
+            ruleWithCodes =
+              Rule (OneOf
+                    [ HasCode "50off" (Name "50off")
+                    , HasCode "50free" (Name "50free")
+                    ]
+                   (Name "test"))
+                   []
+            repo = mkRepo connection
+
+          repo (addRule ruleWithCodes)
+
+          fiftyOffRule <- repo (getClosedRule "50off")
+          fiftyOffRule `shouldBe` Right ruleWithCodes
+          fiftyFreeRule <- repo (getClosedRule "50free")
+          fiftyFreeRule `shouldBe` Right ruleWithCodes
+
+      describe "getClosedRule" $ do
+
+        it "returns a rule for a code" $ \connection -> do
+          let
+            closedRule = Rule (HasCode "test" (Name "test")) []
+            repo = mkRepo connection
+
+          repo (addRule closedRule)
+          rule <- repo (getClosedRule "test")
+          rule `shouldBe` Right closedRule
+
+        it "returns an error for a code that doesn't exist" $ \connection -> do
+          let repo = mkRepo connection
+
+          rule <- repo (getClosedRule "DNE")
+          rule `shouldBe` Left DoesNotExist
 
       describe "getOpenRules" $ do
 
