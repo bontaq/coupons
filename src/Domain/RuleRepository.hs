@@ -89,14 +89,14 @@ handleToRule :: (Value, Value) -> Either Error Rule
 handleToRule (expression, result) =
   Rule <$> parse expression <*> parse result
 
-getCode :: Expression -> [Code]
-getCode expr = case expr of
+getCodes :: Expression -> [Code]
+getCodes expr = case expr of
   (HasCode code _)     -> [code]
-  (DateRange _ _ expr) -> getCode expr
-  (MinSpend _ expr)    -> getCode expr
-  (HasItem _ _ expr)   -> getCode expr
-  (Locale _ expr)      -> getCode expr
-  (OneOf exprs expr)   -> concatMap getCode (expr : exprs)
+  (DateRange _ _ expr) -> getCodes expr
+  (MinSpend _ expr)    -> getCodes expr
+  (HasItem _ _ expr)   -> getCodes expr
+  (Locale _ expr)      -> getCodes expr
+  (OneOf exprs expr)   -> concatMap getCodes (expr : exprs)
   Name _               -> []
 
 --
@@ -138,7 +138,7 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
       L (AddRule (Rule expression result)) -> do
         -- if the rule expression has a code, we put it into closed_rules
         let
-          codes = getCode expression
+          codes = getCodes expression
 
         liftIO $
           execute conn

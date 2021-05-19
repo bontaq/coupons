@@ -18,44 +18,44 @@ import Domain.Rule
 
 
 spec = parallel $ do
-  describe "getCode" $ do
+  describe "getCodes" $ do
     it "finds code in HasCode" $ do
-      getCode (HasCode "test" $ Name "")
+      getCodes (HasCode "test" $ Name "")
         `shouldBe`
         ["test"]
 
     it "finds the codes in OneOf" $ do
-      getCode (OneOf [HasCode "test" $ Name "", HasCode "2" $ Name ""] $ Name "")
+      getCodes (OneOf [HasCode "test" $ Name "", HasCode "2" $ Name ""] $ Name "")
         `shouldBe`
         ["test", "2"]
 
     it "finds a code in DateRange" $ do
-      getCode (DateRange 0 0 (HasCode "test" $ Name ""))
+      getCodes (DateRange 0 0 (HasCode "test" $ Name ""))
         `shouldBe`
         ["test"]
 
     it "finds a code in MinSpend" $ do
-      getCode (MinSpend 0 (HasCode "test" $ Name ""))
+      getCodes (MinSpend 0 (HasCode "test" $ Name ""))
         `shouldBe`
         ["test"]
 
     it "finds a code in HasItem" $ do
-      getCode (HasItem 1 "bike" (HasCode "test" $ Name ""))
+      getCodes (HasItem 1 "bike" (HasCode "test" $ Name ""))
         `shouldBe`
         ["test"]
 
     it "finds a code in Locale" $ do
-      getCode (Locale "US" (HasCode "test" $ Name ""))
+      getCodes (Locale "US" (HasCode "test" $ Name ""))
         `shouldBe`
         ["test"]
 
     it "doesn't find a code in Name" $ do
-      getCode (Name "")
+      getCodes (Name "")
         `shouldBe`
         []
 
     it "finds a nested code" $ do
-      getCode (Locale "US" $ HasItem 1 "bike" $ MinSpend 1000 $ HasCode "test" $ Name "")
+      getCodes (Locale "US" $ HasItem 1 "bike" $ MinSpend 1000 $ HasCode "test" $ Name "")
         `shouldBe`
         ["test"]
 
