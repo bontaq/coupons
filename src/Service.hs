@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
@@ -21,12 +22,12 @@ import Domain.RuleRepository
 import Domain.Rule
 import Domain.Shared
 
-import Database.PostgreSQL.Simple
+-- import Database.PostgreSQL.Simple
 
-getAllSlugs :: Context -> [Slug]
-getAllSlugs Context{ items, bundles } =
+findAllSlugs :: Context -> [Slug]
+findAllSlugs Context{ items, bundles } =
   let collectSlugs = fmap #slug
-      bundleItemSlugs = fmap (collectSlugs . #bundleItems) bundles
+      bundleItemSlugs = fmap (collectSlugs . #items) bundles
       bundleSlugs = fmap #slug bundles
       itemSlugs = collectSlugs items
   in itemSlugs <> concat bundleItemSlugs <> bundleSlugs
@@ -46,16 +47,31 @@ evalExpression context expr = case expr of
       Nothing
 
   Has (One slug) expr ->
-    if slug `elem` getAllSlugs context then
+    if slug `elem` findAllSlugs context then
       evalExpression context expr
     else
       Nothing
 
   Has (Two slug) expr ->
-    if length $ filter (== slug) (getAllSlugs context) >= 2 then
+    if length (filter (== slug) (findAllSlugs context)) >= 2 then
       evalExpression context expr
     else
       Nothing
+
+  In places expr ->
+    case location context of
+      Nothing -> Nothing
+      Just place ->
+        -- here we're saying that if location is in the context,
+        -- treat it as a country (since that's all this supports for now)
+        let country = Country place
+        in
+          if country `elem` places then
+            evalExpression context expr
+          else
+            Nothing
+
+
 
 
 -- evalRule :: Context -> Expression -> Maybe (Code, [Action])
