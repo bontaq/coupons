@@ -7,7 +7,7 @@ import Control.Carrier.State.Strict
 import Control.Carrier.Reader
 
 import GHC.IO
-import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Simple hiding (In)
 import Database.Postgres.Temp
 
 import Test.Hspec
@@ -23,42 +23,37 @@ spec = parallel $ do
   describe "getCodes" $ do
 
     it "finds code in HasCode" $ do
-      getCodes (HasCode "test" $ Name "")
+      getCodes (Has (Code "test") $ Is "")
         `shouldBe`
         ["test"]
 
     it "finds the codes in OneOf" $ do
-      getCodes (OneOf [HasCode "test" $ Name "", HasCode "2" $ Name ""] $ Name "")
+      getCodes (OneOf [Has (Code "test") $ Is "", Has (Code "2") $ Is ""] $ Is "")
         `shouldBe`
         ["test", "2"]
 
     it "finds a code in DateRange" $ do
-      getCodes (DateRange 0 0 (HasCode "test" $ Name ""))
-        `shouldBe`
-        ["test"]
-
-    it "finds a code in MinSpend" $ do
-      getCodes (MinSpend 0 (HasCode "test" $ Name ""))
+      getCodes (Between 0 0 (Has (Code "test") $ Is ""))
         `shouldBe`
         ["test"]
 
     it "finds a code in HasItem" $ do
-      getCodes (HasItem 1 "bike" (HasCode "test" $ Name ""))
+      getCodes (Has (One "bike") (Has (Code "test") $ Is ""))
         `shouldBe`
         ["test"]
 
     it "finds a code in Locale" $ do
-      getCodes (Locale "US" (HasCode "test" $ Name ""))
+      getCodes (In [Country "US"] (Has (Code "test") $ Is ""))
         `shouldBe`
         ["test"]
 
     it "doesn't find a code in Name" $ do
-      getCodes (Name "")
+      getCodes (Is "")
         `shouldBe`
         []
 
     it "finds a nested code" $ do
-      getCodes (Locale "US" $ HasItem 1 "bike" $ MinSpend 1000 $ HasCode "test" $ Name "")
+      getCodes (In [Country "US"] $ Has (One "bike") $ Has (Code "test") $ Is "")
         `shouldBe`
         ["test"]
 
@@ -71,14 +66,14 @@ spec = parallel $ do
     describe "addRule" $ do
 
       it "Stores new rules" $ do
-        let newRule = Rule (Name "test") []
+        let newRule = Rule (Is "test") []
 
         repo (addRule newRule)
           `shouldBe`
           RuleState { rules=[newRule], closedRules=[] }
 
       it "Stores a new closed rule" $ do
-        let closedRule = Rule (HasCode "sakib42" (Name "test")) []
+        let closedRule = Rule (Has (Code "sakib42") (Is "test")) []
 
         repo (addRule closedRule)
           `shouldBe`
@@ -87,7 +82,7 @@ spec = parallel $ do
     describe "getClosedRule" $ do
 
       it "gets a rule by code" $ do
-        let closedRule = Rule (HasCode "sakib42" (Name "test")) []
+        let closedRule = Rule (Has (Code "sakib42") (Is "test")) []
             -- evalState is so we get the result instead of the
             -- new state at the end of the do block
             repo = runM . evalState emptyState . runRuleRepo
@@ -113,11 +108,11 @@ spec = parallel $ do
           RuleState { rules=[], closedRules=[] }
 
       it "Returns a list of all rules (state with a rule in it)" $ do
-        let stateWithRule = emptyState { rules=[Rule (Name "test") []] }
+        let stateWithRule = emptyState { rules=[Rule (Is "test") []] }
 
         repoWithState stateWithRule getOpenRules
           `shouldBe`
-          RuleState { rules=[Rule (Name "test") []], closedRules=[] }
+          RuleState { rules=[Rule (Is "test") []], closedRules=[] }
 
 
   describe "RuleRepoIO" $ do
@@ -154,7 +149,7 @@ spec = parallel $ do
 
       destroyTempDB _ = do
         stop tempDB
-        putStrLn "\nTemp DB removed"
+        putStrLn "\nTemp DB removed\n"
 
     --
     -- The actual tests
@@ -173,7 +168,7 @@ spec = parallel $ do
 
         it "Stores new rules" $ \connection -> do
           let
-            newRule = Rule (Name "test") []
+            newRule = Rule (Is "test") []
             repo = mkRepo connection
 
           repo (addRule newRule)
@@ -185,7 +180,7 @@ spec = parallel $ do
 
         it "Stores a rule with a code as a closed rule" $ \connection -> do
           let
-            ruleWithCode = Rule (HasCode "sakib42" (Name "sakib42-coupon")) []
+            ruleWithCode = Rule (Has (Code "sakib42") (Is "sakib42-coupon")) []
             repo = mkRepo connection
 
           repo (addRule ruleWithCode)
@@ -199,10 +194,10 @@ spec = parallel $ do
           let
             ruleWithCodes =
               Rule (OneOf
-                    [ HasCode "50off" (Name "50off")
-                    , HasCode "50free" (Name "50free")
+                    [ Has (Code "50off") (Is "50off")
+                    , Has (Code "50free") (Is "50free")
                     ]
-                   (Name "test"))
+                   (Is "test"))
                    []
             repo = mkRepo connection
 
@@ -217,7 +212,7 @@ spec = parallel $ do
 
         it "returns a rule for a code" $ \connection -> do
           let
-            closedRule = Rule (HasCode "test" (Name "test")) []
+            closedRule = Rule (Has (Code "test") (Is "test")) []
             repo = mkRepo connection
 
           repo (addRule closedRule)
@@ -241,7 +236,7 @@ spec = parallel $ do
         it "Returns a list of all rules (after adding a rule)" $ \connection -> do
           -- hey wait this is pretty much the same tests as above.  shrug shrug
           let
-            newRule = Rule (Name "test") []
+            newRule = Rule (Is "test") []
             repo = mkRepo connection
 
           repo (addRule newRule)

@@ -15,6 +15,21 @@ Testing: hspec (standard)
 
 Automated formatting options: fourmolo, ormolu, floskell, stylish-haskell
 
+example failed test output:
+
+Failures:
+
+  /home/ian/code/coupons/src/Domain/RuleRepositorySpec.hs:83:9: 
+  1) RuleRepoState.addRule Stores a new closed rule
+       expected: RuleState {rules = [], closedRules = []}
+        but got: RuleState {rules = [Rule (HasCode "sakib42" (Name "test")) []], closedRules = []}
+
+  To rerun use: --match "/RuleRepoState/addRule/Stores a new closed rule/"
+
+Randomized with seed 1465572638
+
+Finished in 0.0407 seconds
+
 Tooling: 
 - GHCi
 - haskell language server "just works"
@@ -25,6 +40,7 @@ done - hspec
 done - database
 done - re-organize
 tests
+update log to use file (and log the time of msgs)
 pick an automated formatter I GUESS
 
 bumps:
@@ -46,3 +62,5 @@ good:
 wonder:
 - parallel tests with a real database run in less than a second
 - build and running tests takes < 5 s
+  with more tests, full build and test takes 5.2s
+  with --fast, still less than 5s

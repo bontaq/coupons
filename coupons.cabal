@@ -30,6 +30,16 @@ library
       Service
   other-modules:
       Paths_coupons
+      , Domain.Context
+      , Domain.Rule
+      , Domain.RuleRepository
+      , Domain.RuleRepositorySpec
+      , Domain.Shared
+      , Effects.Logging
+      , Effects.LoggingSpec
+      , Helpers.Migrate
+      , ServiceSpec
+
   hs-source-dirs:
       src
   build-depends:
@@ -62,6 +72,16 @@ test-suite coupons-test
   main-is: Spec.hs
   other-modules:
       Paths_coupons
+      , Domain.Context
+      , Domain.Rule
+      , Domain.RuleRepository
+      , Domain.RuleRepositorySpec
+      , Domain.Shared
+      , Effects.Logging
+      , Effects.LoggingSpec
+      , Helpers.Migrate
+      , Service
+      , ServiceSpec
   hs-source-dirs:
       src
   ghc-options: -threaded -rtsopts -with-rtsopts=-N

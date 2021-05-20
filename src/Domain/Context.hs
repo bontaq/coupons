@@ -18,7 +18,7 @@ instance forall x r a. HasField x r a => IsLabel x (r -> a) where
   fromLabel r = getField @x r
 
 data Bundle = Bundle
-  { bundleItems :: [Item]
+  { items :: [Item]
   , slug  :: String
   }
 
@@ -32,4 +32,3 @@ data Context = Context
   , location :: Maybe String
   , codes    :: [Code]
   }
-
