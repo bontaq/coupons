@@ -52,68 +52,91 @@ spec = parallel $ do
         `shouldBe`
         Just "this coupon code"
 
-    it "finds the code if it matches the has code rule" $ do
-      evalExpression
-        (context{ codes=["bike-coupon"] })
-        (Has (Code "bike-coupon") $ Is "bike-coupon")
-      `shouldBe`
-        Just "bike-coupon"
+    describe "Has Code" $ do
 
-    it "finds nothing if it doesn't match the has code rule" $ do
-      evalExpression
-        context
-        (Has (Code "bike-coupon") $ Is "bike-coupon")
-      `shouldBe`
-        Nothing
-
-    it "finds the code for a single item" $ do
-      -- TODO: remove :: Context once on GHC 9
-      let context' = context{ items=[Item { slug="car" }] } :: Context
-      evalExpression context' (Has (One "car") $ Is "car-coupon")
+      it "finds the code if it matches the has code rule" $ do
+        evalExpression
+          (context{ codes=["bike-coupon"] })
+          (Has (Code "bike-coupon") $ Is "bike-coupon")
         `shouldBe`
-        Just "car-coupon"
+          Just "bike-coupon"
 
-    it "finds the code for two items" $ do
-      let item = Item { slug="hat" }
-      evalExpression (context{ items=[item, item] }) (Has (Two "hat") $ Is "hat-coupon")
+      it "finds nothing if it doesn't match the has code rule" $ do
+        evalExpression
+          context
+          (Has (Code "bike-coupon") $ Is "bike-coupon")
         `shouldBe`
-        Just "hat-coupon"
+          Nothing
 
-    it "finds nothing for item rule miss" $ do
-      evalExpression context (Has (One "car") $ Is "car-coupon")
+    describe "Has One / Has Two" $ do
+
+      it "finds the code for a single item" $ do
+        -- TODO: remove :: Context once on GHC 9
+        let context' = context{ items=[Item { slug="car" }] } :: Context
+        evalExpression context' (Has (One "car") $ Is "car-coupon")
+          `shouldBe`
+          Just "car-coupon"
+
+      it "finds the code for two items" $ do
+        let item = Item { slug="hat" }
+        evalExpression (context{ items=[item, item] }) (Has (Two "hat") $ Is "hat-coupon")
+          `shouldBe`
+          Just "hat-coupon"
+
+      it "finds nothing for item rule miss" $ do
+        evalExpression context (Has (One "car") $ Is "car-coupon")
+          `shouldBe`
+          Nothing
+
+        evalExpression context (Has (Two "car") $ Is "car-coupon")
+          `shouldBe`
+          Nothing
+
+    describe "In" $ do
+
+      it "finds the code for a country place rule" $ do
+        evalExpression
+          context{ location=Just"MX" }
+          (In [Country "MX"] $ Is "mx-coupon")
         `shouldBe`
-        Nothing
+          Just "mx-coupon"
 
-      evalExpression context (Has (Two "car") $ Is "car-coupon")
+      it "finds the code if one of the countries match" $ do
+        evalExpression
+          context{ location=Just "GB" }
+          (In [Country "BR", Country "GB"] $ Is "gb-or-br-coupon")
         `shouldBe`
-        Nothing
+          Just "gb-or-br-coupon"
 
-    it "finds the code for a country place rule" $ do
-      evalExpression
-        context{ location=Just"MX" }
-        (In [Country "MX"] $ Is "mx-coupon")
-      `shouldBe`
-        Just "mx-coupon"
+      it "finds nothing if no country places match" $ do
+        evalExpression
+          context{ location=Just "US" }
+          (In [Country "BR"] $ Is "visit brazil")
+        `shouldBe`
+          Nothing
 
-    it "finds the code if one of the countries match" $ do
-      evalExpression
-        context{ location=Just "GB" }
-        (In [Country "BR", Country "GB"] $ Is "gb-or-br-coupon")
-      `shouldBe`
-        Just "gb-or-br-coupon"
+      it "finds nothing if no location is in the context" $ do
+        evalExpression
+          context
+          (In [Country "US"] $ Is "us-coupon")
+        `shouldBe`
+          Nothing
 
-    it "finds nothing if no country places match" $ do
-      evalExpression
-        context{ location=Just "US" }
-        (In [Country "BR"] $ Is "visit brazil")
-      `shouldBe`
-        Nothing
+    describe "OneOf" $ do
 
-    it "finds nothing if no location is in the context" $ do
-      evalExpression
-        context
-        (In [Country "US"] $ Is "us-coupon")
-      `shouldBe`
-        Nothing
+      it "find the code if a OneOf rule passes" $ do
+        evalExpression
+          context{ items=[Item { slug="boat" }] }
+          (OneOf [Has (One "car") $ Is "", Has (One "boat") $ Is ""] $ Is "car-or-boat")
+        `shouldBe`
+          Just "car-or-boat"
+
+      it "finds nothing if no rules pass" $ do
+        evalExpression
+          context
+          (OneOf [Has (One "car") $ Is "", Has (One "boat") $ Is ""] $ Is "car-or-boat")
+        `shouldBe`
+          Nothing
+
 
 main = hspec spec

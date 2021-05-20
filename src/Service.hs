@@ -22,8 +22,6 @@ import Domain.RuleRepository
 import Domain.Rule
 import Domain.Shared
 
--- import Database.PostgreSQL.Simple
-
 findAllSlugs :: Context -> [Slug]
 findAllSlugs Context{ items, bundles } =
   let collectSlugs = fmap #slug
@@ -31,7 +29,6 @@ findAllSlugs Context{ items, bundles } =
       bundleSlugs = fmap #slug bundles
       itemSlugs = collectSlugs items
   in itemSlugs <> concat bundleItemSlugs <> bundleSlugs
-
 
 evalExpression :: Context -> Expression -> Maybe Code
 evalExpression context expr = case expr of
@@ -71,7 +68,14 @@ evalExpression context expr = case expr of
           else
             Nothing
 
-
+  OneOf exprs expr ->
+    -- extremely cool, though I wonder about ignoring the codes
+    -- from sub-rules in OneOf.  If we returned them, could you
+    -- do something cool?
+    if any isJust (fmap (evalExpression context) exprs) then
+      evalExpression context expr
+    else
+      Nothing
 
 
 -- evalRule :: Context -> Expression -> Maybe (Code, [Action])
