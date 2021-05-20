@@ -78,36 +78,26 @@ evalExpression context expr = case expr of
       Nothing
 
   Between start end expr ->
+    -- also cool, if it's equal after sorting it's in range
     if [start, time context, end] == sort [start, time context, end] then
       evalExpression context expr
     else
       Nothing
 
--- evalRule :: Context -> Expression -> Maybe (Code, [Action])
--- evalRule p rule = do
---   print ""
---
--- evalRule _ (Rule (Name couponCode) actions) = Just (couponCode, actions)
--- evalRule p@Context { codes } (Rule (HasCode code rest) actions) =
---   case find (== code) codes of
---     Just _  -> Just (code, actions)
---     Nothing -> evalRule p (Rule rest actions)
+evalRule :: Context -> Rule -> Maybe (Code, [Action])
+evalRule context (Rule expression action) =
+  case evalExpression context expression of
+    Just code -> Just (code, action)
+    Nothing   -> Nothing
 
--- getDiscounts ::
---     ( Has Log sig m
---     , Has RuleRepo sig m
---     )
---   => Context -> m [Action]
--- getDiscounts cart codes = do
---   log $ "Finding discounts for cart " <> #id cart <> " and coupon codes " <> show codes
---
---   rules <- getOpenRules
---
---   let actions = mapMaybe (evalRule cart) <$> rules
---
---   log . show =<< getOpenRules
---
---   pure []
+getActions ::
+  ( Has Log sig m
+  , Has RuleRepo sig m
+  ) => context -> m [(Code, [Action])]
+getActions context = do
+  openRules <- getOpenRules
+
+  undefined
 
 -- runDiscounts cart coupons = do
 --   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
@@ -118,5 +108,5 @@ evalExpression context expr = case expr of
 --     . runRuleRepoIO
 --     $ getDiscounts cart coupons
 
-createDiscount :: Item -> ()
-createDiscount = undefined
+-- createDiscount :: Item -> ()
+-- createDiscount = undefined

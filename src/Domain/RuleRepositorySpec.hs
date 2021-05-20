@@ -10,6 +10,9 @@ import GHC.IO
 import Database.PostgreSQL.Simple hiding (In)
 import Database.Postgres.Temp
 
+import Data.Time.Calendar
+import Data.Time.Clock
+
 import Test.Hspec
 
 import Helpers.Migrate
@@ -33,7 +36,8 @@ spec = parallel $ do
         ["test", "2"]
 
     it "finds a code in DateRange" $ do
-      getCodes (Between 0 0 (Has (Code "test") $ Is ""))
+      let time = UTCTime (fromGregorian 1989 10 18) 0
+      getCodes (Between time time (Has (Code "test") $ Is ""))
         `shouldBe`
         ["test"]
 

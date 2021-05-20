@@ -98,4 +98,5 @@ test-suite coupons-test
                 , postgresql-simple-migration
                 , tmp-postgres
                 , bytestring
+                , time
   default-language: Haskell2010
