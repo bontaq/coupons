@@ -12,6 +12,8 @@ import GHC.Records
 import GHC.OverloadedLabels (IsLabel(..))
 import GHC.TypeLits (Symbol)
 
+import Data.Time.Clock
+
 import Domain.Shared
 
 instance forall x r a. HasField x r a => IsLabel x (r -> a) where
@@ -31,4 +33,5 @@ data Context = Context
   , bundles  :: [Bundle]
   , location :: Maybe String
   , codes    :: [Code]
+  , time     :: UTCTime
   }

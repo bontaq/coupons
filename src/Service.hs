@@ -77,6 +77,11 @@ evalExpression context expr = case expr of
     else
       Nothing
 
+  Between start end expr ->
+    if [start, time context, end] == sort [start, time context, end] then
+      evalExpression context expr
+    else
+      Nothing
 
 -- evalRule :: Context -> Expression -> Maybe (Code, [Action])
 -- evalRule p rule = do

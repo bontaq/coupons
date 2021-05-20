@@ -1,6 +1,9 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 module ServiceSpec where
 
+import Data.Time.Clock
+import Data.Time.Calendar
+
 import Test.Hspec
 
 import Domain.Rule
@@ -15,6 +18,7 @@ spec = parallel $ do
         , bundles = []
         , location = Nothing
         , codes = []
+        , time = UTCTime (fromGregorian 1989 10 18) 0
         }
 
   describe "findAllSlugs" $ do
@@ -138,5 +142,33 @@ spec = parallel $ do
         `shouldBe`
           Nothing
 
+    describe "Between " $ do
+
+      let day = secondsToNominalDiffTime (24 * 60 * 60)
+      currentTime <- runIO getCurrentTime
+
+      it "matches if the current time is in range" $ do
+        let
+          future = addUTCTime day currentTime
+          past = addUTCTime (negate day) currentTime
+
+        evalExpression
+          context{ time=currentTime }
+          (Between past future $ Is "the most now code")
+        `shouldBe`
+          Just "the most now code"
+
+      it "finds nothing if not in range" $ do
+        let
+          future = addUTCTime day currentTime
+          past = addUTCTime (negate day) currentTime
+
+        evalExpression
+          context -- since we initalized it with 1989 as the year
+          (Between past future $ Is "the most now code")
+        `shouldBe`
+          Nothing
+
+  
 
 main = hspec spec

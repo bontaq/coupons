@@ -3,10 +3,12 @@ module Domain.Rule where
 
 import GHC.Generics
 
+import Data.Time.Clock
+
 import Domain.Shared
 
-type StartDate = Integer
-type EndDate = Integer
+type StartDate = UTCTime
+type EndDate = UTCTime
 type MinAmount = Integer
 type Count = Integer
 type Slug = String
