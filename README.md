@@ -18,6 +18,8 @@ Testing: hspec (standard)
 
 Automated formatting options: fourmolo, ormolu, floskell, stylish-haskell
 
+criterion for built in speed testing
+
 future
 better effect system
 normal accessing of fields
@@ -73,6 +75,10 @@ sudo dd if=/dev/zero of=swapfile bs=1K count=4M
 sudo chmod 600 swapfile
 sudo mkswap swapfile
 sudo swapon swapfile
+-- had to increase files open limit
+ulimit -n 10000
+-- had to increas file size limit
+ulimit -f 10000
 
 good:
 - haskell language server has very good built in warnings via hlint
@@ -86,6 +92,8 @@ wonder:
 - build and running tests takes < 5 s
   with more tests, full build and test takes 5.2s
   with --fast, still less than 5s
+  now that it's fully built, it's still < 5 s
+  (a brand new build can take longer if you haven't built for awhile and made a lot of changes (10s))
 
 example request:
 { 
