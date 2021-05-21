@@ -115,7 +115,7 @@ getActions context = do
   let
     -- since we want to combine the inner rules of the Eithers (openRules & closedRules),
     -- we do it this way.  written without using this pattern looks like
-    -- combined = fmap (\closed -> (fmap (\open -> open <> closed) openRules)) closedRules
+    -- combined' = fmap (\closed -> (fmap (\open -> open <> closed) openRules)) closedRules
     combined = (<>) <$> openRules <*> closedRules
     matchedRules = mapMaybe (evalRule context) <$> combined
 
