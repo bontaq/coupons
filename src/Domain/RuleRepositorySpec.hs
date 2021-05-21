@@ -77,30 +77,30 @@ spec = parallel $ do
           RuleState { rules=[newRule], closedRules=[] }
 
       it "Stores a new closed rule" $ do
-        let closedRule = Rule (Has (Code "sakib42") (Is "test")) []
+        let closedRule = Rule (Has (Code "test-99") (Is "test")) []
 
         repo (addRule closedRule)
           `shouldBe`
-          RuleState { rules=[], closedRules=[(closedRule, "sakib42")] }
+          RuleState { rules=[], closedRules=[(closedRule, "test-99")] }
 
     describe "getClosedRule" $ do
 
       it "gets a rule by code" $ do
-        let closedRule = Rule (Has (Code "sakib42") (Is "test")) []
+        let closedRule = Rule (Has (Code "test-99") (Is "test")) []
             -- evalState is so we get the result instead of the
             -- new state at the end of the do block
             repo = runM . evalState emptyState . runRuleRepo
 
         r <- repo $ do
           addRule closedRule
-          getClosedRule "sakib42"
+          getClosedRule "test-99"
 
         r `shouldBe` Right closedRule
 
       it "returns a DNE for no matches" $ do
         let repo = run . evalState emptyState . runRuleRepo
 
-        repo (getClosedRule "sakib42")
+        repo (getClosedRule "test-99")
           `shouldBe`
           Left DoesNotExist
 
@@ -184,14 +184,14 @@ spec = parallel $ do
 
         it "Stores a rule with a code as a closed rule" $ \connection -> do
           let
-            ruleWithCode = Rule (Has (Code "sakib42") (Is "sakib42-coupon")) []
+            ruleWithCode = Rule (Has (Code "test-99") (Is "test-99-coupon")) []
             repo = mkRepo connection
 
           repo (addRule ruleWithCode)
 
           openRules <- repo getOpenRules
           openRules `shouldBe` Right []
-          closedRule <- repo (getClosedRule "sakib42")
+          closedRule <- repo (getClosedRule "test-99")
           closedRule `shouldBe` Right ruleWithCode
 
         it "Stores a rule with multiple codes as separate closed rules" $ \connection -> do

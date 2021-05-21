@@ -68,7 +68,7 @@ data Rule = Rule Expression [Action]
 --   [FreeProduct "hat"]
 -- or
 -- Rule
---   HasCode "sakib42" (Name "sakib42")
+--   HasCode "test-99" (Name "test-99")
 --   [AmountOff 50 WholeCart]
 -- or
 -- Rule

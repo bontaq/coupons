@@ -135,6 +135,10 @@ Persistence: postgresql-simple (other, more magical/productive options with bett
 Testing: hspec (standard)
 
 #### Things I haven't got to:
+Enabling -Wall to fix all the warnings
+
+Using a Reader to pass in the logger to the Logger effect
+
 Automated formatting options: fourmolo, ormolu, floskell, stylish-haskell
 
 Criterion for built in speed testing
@@ -153,7 +157,7 @@ Failures:
   /home/ian/code/coupons/src/Domain/RuleRepositorySpec.hs:83:9: 
   1) RuleRepoState.addRule Stores a new closed rule
        expected: RuleState {rules = [], closedRules = []}
-        but got: RuleState {rules = [Rule (HasCode "sakib42" (Name "test")) []], closedRules = []}
+        but got: RuleState {rules = [Rule (HasCode "test-99" (Name "test")) []], closedRules = []}
 
   To rerun use: --match "/RuleRepoState/addRule/Stores a new closed rule/"
 
