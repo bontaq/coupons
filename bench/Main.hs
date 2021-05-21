@@ -7,9 +7,11 @@ import Network.Wreq
 import Data.Aeson
 
 
-hit = do
-  r <- postWith opts
-    "https://accounts.spotify.com/api/token"
+-- hit = do
+--   r <- postWith defaultOptions
+--     "https://accounts.spotify.com/api/token"
+--
+--   pure ()
 
 
 main :: IO ()
