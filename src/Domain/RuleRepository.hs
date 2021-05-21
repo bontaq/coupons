@@ -26,28 +26,6 @@ import Data.Aeson
 -- Helper
 import Data.Maybe
 
---
--- I guess you would call this the mapping layer so that we
--- can transform our rules into and out of JSON for storing
--- as jsonb fields
---
-instance ToJSON CodeOrItem where
-instance FromJSON CodeOrItem where
-
-instance ToJSON Place where
-instance FromJSON Place where
-
-instance ToJSON Expression where
-instance FromJSON Expression where
-
-instance ToJSON Target where
-instance FromJSON Target where
-
-instance ToJSON Action where
-instance FromJSON Action where
-
-instance ToJSON Rule where
-instance FromJSON Rule where
 
 
 --------------------------------

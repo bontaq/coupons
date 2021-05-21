@@ -49,10 +49,18 @@ bumps:
 - had to install libpq-dev so postgresql-simple would build (ubuntu)
 - haskell language server climbed to ~5GB ram use over 12 hrs working on this
 -- after another day it has climbed to ~10GB ram
+-- another day of development, since I'm no longer adding so much it's held at max ~3Gb
 -- Strangely GHCi (the repl) uses only 80MB ram even after awhile using
 - had to make sure initdb was on my path in order to acquire a temp db which
   I'm using to run tests like a madman
   was in /usr/lib/postgresql/12/bin (still ubuntu)
+-- had to create a swap on the VPS (it only has 2GB of ram) to build 
+sudo mkdir -v /var/cache/swap
+cd /var/cache/swap
+sudo dd if=/dev/zero of=swapfile bs=1K count=4M
+sudo chmod 600 swapfile
+sudo mkswap swapfile
+sudo swapon swapfile
 
 good:
 - haskell language server has very good built in warnings via hlint
