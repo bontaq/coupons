@@ -1,6 +1,9 @@
 # Coupon Service
 
-A tour of where Haskell is at from a production ready standpoint
+### An investigation into Haskell as a production language
+
+github is using it for semantics
+facebook is using it for spam
 
 Effects: fused-effects (used by github for its semantics project)
 
@@ -14,6 +17,15 @@ Persistence: postgresql-simple (other, more magical/productive options with bett
 Testing: hspec (standard)
 
 Automated formatting options: fourmolo, ormolu, floskell, stylish-haskell
+
+future
+better effect system
+normal accessing of fields
+new foundation
+linear types
+merger of haskell language servers
+
+220 MiB used before bed
 
 example failed test output:
 
@@ -41,7 +53,7 @@ done - database
 done - re-organize
 done - tests
 done - handle closed rules
-webserver
+done - webserver
 update log to use file (and log the time of msgs)
 pick an automated formatter I GUESS
 

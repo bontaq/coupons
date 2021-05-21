@@ -101,13 +101,16 @@ evalRule context (Rule expression action) =
     Just code -> Just (code, action)
     Nothing   -> Nothing
 
+filterDNEs :: [Either RepoError Rule] -> [Either RepoError Rule]
+filterDNEs = filter (/= Left DoesNotExist)
+
 getActions ::
   ( Has Log sig m
   , Has RuleRepo sig m
   ) => Context -> m (Either RepoError [(Code, [Action])])
 getActions context = do
   openRules <- getOpenRules
-  closedRules <- sequence <$> mapM getClosedRule (codes context)
+  closedRules <- sequence . filterDNEs <$> mapM getClosedRule (codes context)
 
   let
     -- since we want to combine the inner rules of the Eithers (openRules & closedRules),
