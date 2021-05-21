@@ -69,12 +69,18 @@ There are much more humane (human?) effect libraries out there like [Polysemy](h
 
 ### The Future
 Haskell's having a bit of a moment in that development speed has picked up, long standing problems are being fixed, and it feels like it's all coming together.  Here's what's happened recently:
-* [Linear types](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/linear_types.html) were introduced in GHC 9 which allow the expression of single-use resources ala rust.
-* Previously there were two projects implementing the language server protocol for Haskell: ghcide and haskell-ide-engine.  They've joined forces to build one excellent [Haskell Language Server](https://github.com/haskell/haskell-language-server) which hit their 1.0 release in February.  New features are coming quickly but ram use is high (~5Gb after a day of work if you are doing a lot).
-* Records in Haskell were infamously difficult due to various name collisions and almost requiring the use of [Lenses](https://kseo.github.io/posts/2016-12-10-encodings-of-lense.html) to access and update records.  As of [GHC 9.2](https://www.haskell.org/ghc/blog/20210401-ghc-9.2.1-alpha1-released.html) (currently in alpha) this is no longer the case and record access has been normalized.  `let name = person.name` away, or even `names = fmap .name persons` if you're feeling fancy.
-* You know how I chose Fused Effects over a more sane effects system in the name of speed?  Well a [GHC Proposal](https://github.com/ghc-proposals/ghc-proposals/pull/313) to make the nice effect systems fast was accepted and is being implemented.
-* Haskell finally got a [real foundation](http://haskell.foundation/) working to increase adoption, chaired by simon peyton jones.
-*  [GHC 9.2](https://www.haskell.org/ghc/blog/20210401-ghc-9.2.1-alpha1-released.html) continues its gifts of making Haskell vastly more approachable by also introducing the `{-# LANGUAGE GHC2021 #-}` pragma.  Because almost every feature in Haskell is a flag, that's why you see about 50 `{-#  LANGUAGE blahblah #-}` at the top of most files.  That freaks everyone out, so this meta-flag was introduced that turns on everything we'd consider standard to writing Haskell in 2021.
+
+[Linear types](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/linear_types.html) were introduced in GHC 9 which allow the expression of single-use resources ala rust.
+
+Previously there were two projects implementing the language server protocol for Haskell: ghcide and haskell-ide-engine.  They've joined forces to build one excellent [Haskell Language Server](https://github.com/haskell/haskell-language-server) which hit their 1.0 release in February.  New features are coming quickly but ram use is high (~5Gb after a day of work if you are doing a lot).  It also has excellent support in VSCode so no, not everyone has to learn emacs.
+
+Records in Haskell were infamously difficult due to various name collisions and almost requiring the use of [Lenses](https://kseo.github.io/posts/2016-12-10-encodings-of-lense.html) to access and update records.  As of [GHC 9.2](https://www.haskell.org/ghc/blog/20210401-ghc-9.2.1-alpha1-released.html) (currently in alpha) this is no longer the case and record access has been normalized.  `let name = person.name` away, or even `names = fmap .name persons` if you're feeling fancy.
+
+You know how I chose Fused Effects over a more sane effects system in the name of speed?  Well a [GHC Proposal](https://github.com/ghc-proposals/ghc-proposals/pull/313) to make the nice effect systems fast was accepted and is being implemented.
+
+Haskell finally got a [real foundation](http://haskell.foundation/) working to increase adoption, chaired by simon peyton jones.
+
+[GHC 9.2](https://www.haskell.org/ghc/blog/20210401-ghc-9.2.1-alpha1-released.html) continues its gifts of making Haskell vastly more approachable by also introducing the `{-# LANGUAGE GHC2021 #-}` pragma.  Because almost every feature in Haskell is a flag, that's why you see about 50 `{-#  LANGUAGE blahblah #-}` at the top of most files.  That freaks everyone out, so this meta-flag was introduced that turns on everything we'd consider standard to writing Haskell in 2021.
 
 ### Feelings
 
@@ -84,19 +90,26 @@ Really leaning into Repl driven development lead to an interesting thing:  the [
 
 ### Performance
 
-YOU KNOW _ME_ BUDDY CAN'T END WITHOUT RUNNING IT **FOR REAL**.
+Of course I had to run it on a real server for real.
 
 To make sure performance was consistent and to make sure there were no memory leaks, I've been hitting the service with 1000 requests (over 10 seconds) every minute for 8 hours.  It's running on an 18$/m VPS with 2Gb ram and 2VCpus.  
 
 Response times in msec:
+
 min: 26
+
 max: 335
+
 median: 46
+
 p95: 98
+
 p99: 143
 
 Cpu: Never above 15%
+
 Memory: Total used was at 220MiB when I began, it's at 230MiB now.  That's for the whole system including postgres, the Haskell server has stayed at 60MiB. 
+
 Overall: Cool as a cucumber and could be pushed a lot more.  I'm not even doing anything in parallel or using caching!
 
 ### Ending
