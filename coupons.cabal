@@ -70,6 +70,7 @@ executable coupons-exe
     , coupons
     , fused-effects
     , postgresql-simple
+    , resource-pool
     , aeson
     , time
     , scotty
