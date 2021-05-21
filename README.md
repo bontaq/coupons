@@ -40,7 +40,8 @@ done - hspec
 done - database
 done - re-organize
 done - tests
-handle closed rules
+done - handle closed rules
+webserver
 update log to use file (and log the time of msgs)
 pick an automated formatter I GUESS
 
@@ -65,3 +66,11 @@ wonder:
 - build and running tests takes < 5 s
   with more tests, full build and test takes 5.2s
   with --fast, still less than 5s
+
+example request:
+{ 
+  "items": [],
+  "bundles": [],
+  "codes": [],
+  "time": "2021-05-21T04:16:19Z"
+}

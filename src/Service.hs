@@ -3,19 +3,30 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
 
-module Service where
+module Service
+  -- all we expose for the real API
+  ( Context
+  , runGetActions
+  -- exported for the tests
+  , getActions
+  , findAllSlugs
+  , evalExpression
+  ) where
 
 import Prelude hiding (log)
 
+import Control.Monad.IO.Class (MonadIO(..))
 import Control.Algebra (Has)
 import Control.Carrier.Reader
 import Control.Carrier.Lift
 import Effects.Logging (Log, log, runLogIO)
 
 import Data.List
+import Data.Maybe
 
 import Data.Aeson
-import Data.Maybe
+
+import Database.PostgreSQL.Simple (Connection)
 
 import Domain.Context
 import Domain.RuleRepository
@@ -99,22 +110,18 @@ getActions context = do
   closedRules <- sequence <$> mapM getClosedRule (codes context)
 
   let
-    -- since we want to combine the inner rules of the Eithers,
+    -- since we want to combine the inner rules of the Eithers (openRules & closedRules),
     -- we do it this way.  written without using this pattern looks like
-    -- combined' = fmap (\closed -> (fmap (\open -> open <> closed) openRules)) closedRules
+    -- combined = fmap (\closed -> (fmap (\open -> open <> closed) openRules)) closedRules
     combined = (<>) <$> openRules <*> closedRules
     matchedRules = mapMaybe (evalRule context) <$> combined
 
   pure matchedRules
 
--- runDiscounts cart coupons = do
---   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
---
---   runM
---     . runLogIO
---     . runReader conn
---     . runRuleRepoIO
---     $ getDiscounts cart coupons
-
--- createDiscount :: Item -> ()
--- createDiscount = undefined
+runGetActions :: MonadIO m => Connection -> Context -> m (Either RepoError [(Code, [Action])])
+runGetActions conn context =
+  runM
+  . runLogIO
+  . runReader conn
+  . runRuleRepoIO
+  $ getActions context

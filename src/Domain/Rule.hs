@@ -34,7 +34,7 @@ data Expression
 -- Has (One "bike-package"), Has (Is "coupon-code")
 -- Has (One "shoe") (In [Locale "US"] (Is "shoe-coupon"))
 -- Between "may-16" "may-22"
---   (In [Locale "US", Locale "GB"] (Has (One "bike-package") (Is "happy spring coupon")))
+--   (In [Locale "US", Locale "GB"] (Has (One "bikepackage") (Is "happy spring coupon")))
 
 -- other expression ideas
 -- - MinSpend
