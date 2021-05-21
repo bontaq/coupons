@@ -39,6 +39,7 @@ library
       , Effects.Logging
       , Effects.LoggingSpec
       , Helpers.Migrate
+      , Helpers.Gen
       , ServiceSpec
 
   hs-source-dirs:
