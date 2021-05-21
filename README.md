@@ -39,7 +39,8 @@ todo:
 done - hspec
 done - database
 done - re-organize
-tests
+done - tests
+handle closed rules
 update log to use file (and log the time of msgs)
 pick an automated formatter I GUESS
 

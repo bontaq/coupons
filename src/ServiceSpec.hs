@@ -1,13 +1,19 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 module ServiceSpec where
 
+import Control.Carrier.Lift
+import Control.Carrier.State.Strict
+import Effects.Logging (runLogIO)
+
 import Data.Time.Clock
 import Data.Time.Calendar
 
 import Test.Hspec
 
 import Domain.Rule
+import Domain.RuleRepository
 import Domain.Context
+
 
 import Service
 
@@ -169,6 +175,55 @@ spec = parallel $ do
         `shouldBe`
           Nothing
 
-  
+  describe "getActions" $ do
 
+    let
+      emptyState = RuleState { rules=[], closedRules=[] }
+      run' = runM . runLogIO . evalState emptyState . runRuleRepo
+      closedRule = Rule (Has (Code "free car") $ Is "Free Car") [FreeProduct "car"]
+      openRule = Rule (In [Country "BR"] $ Is "BR Only") [AmountOff 50 WholeCart]
+
+    it "returns an empty list if nothing matched" $ do
+      actions <- run' $ do
+        addRule closedRule
+        addRule openRule
+
+        getActions context
+
+      actions `shouldBe` Right []
+
+    it "returns the closed rule if it matches" $ do
+      actions <- run' $ do
+        addRule closedRule
+        addRule openRule
+
+        getActions (context { codes=["free car"] })
+
+      actions `shouldBe` Right [("Free Car", [FreeProduct "car"])]
+
+    it "returns the open rules if it matches" $ do
+      actions <- run' $ do
+        addRule closedRule
+        addRule openRule
+
+        getActions (context { location=Just "BR" })
+
+      actions `shouldBe` Right [("BR Only", [AmountOff 50 WholeCart])]
+
+    it "returns both rules if both match" $ do
+      actions <- run' $ do
+        addRule closedRule
+        addRule openRule
+
+        getActions (context { location=Just "BR", codes=["free car"] })
+
+      actions
+        `shouldBe`
+        Right [ ("BR Only", [AmountOff 50 WholeCart])
+              , ("Free Car", [FreeProduct "car"])
+              ]
+
+
+
+-- this is just for the repl
 main = hspec spec

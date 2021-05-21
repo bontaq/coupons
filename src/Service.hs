@@ -93,11 +93,19 @@ evalRule context (Rule expression action) =
 getActions ::
   ( Has Log sig m
   , Has RuleRepo sig m
-  ) => context -> m [(Code, [Action])]
+  ) => Context -> m (Either RepoError [(Code, [Action])])
 getActions context = do
   openRules <- getOpenRules
+  closedRules <- sequence <$> mapM getClosedRule (codes context)
 
-  undefined
+  let
+    -- since we want to combine the inner rules of the Eithers,
+    -- we do it this way.  written without using this pattern looks like
+    -- combined' = fmap (\closed -> (fmap (\open -> open <> closed) openRules)) closedRules
+    combined = (<>) <$> openRules <*> closedRules
+    matchedRules = mapMaybe (evalRule context) <$> combined
+
+  pure matchedRules
 
 -- runDiscounts cart coupons = do
 --   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"

@@ -8,4 +8,5 @@ data RepoError
   = DoesNotExist
   | DatabaseErr String
   | TooManyResults
+  | FailedToParseRule String
   deriving (Show, Eq)

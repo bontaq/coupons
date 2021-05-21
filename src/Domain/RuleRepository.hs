@@ -57,7 +57,7 @@ instance FromJSON Rule where
 addRule :: Has RuleRepo sig m => Rule -> m ()
 addRule rule = send (AddRule rule)
 
-getOpenRules :: Has RuleRepo sig m => m (Either Error [Rule])
+getOpenRules :: Has RuleRepo sig m => m (Either RepoError [Rule])
 getOpenRules = send GetOpenRules
 
 getClosedRule :: Has RuleRepo sig m => Code -> m (Either RepoError Rule)
@@ -70,7 +70,7 @@ getClosedRule code = send (GetClosedRule code)
 
 data RuleRepo (m :: Type -> Type) k where
   AddRule       :: Rule -> RuleRepo m ()
-  GetOpenRules  :: RuleRepo m (Either Error [Rule])
+  GetOpenRules  :: RuleRepo m (Either RepoError [Rule])
   GetClosedRule :: Code -> RuleRepo m (Either RepoError Rule)
 
 
@@ -90,10 +90,13 @@ toEither result = case result of
   Success a -> Right a
   Error str -> Left str
 
-parse :: FromJSON a => Value -> Either Error a
-parse = toEither . fromJSON
+parse :: FromJSON a => Value -> Either RepoError a
+parse value =
+  case toEither . fromJSON $ value of
+    Left err -> Left (FailedToParseRule err)
+    Right v  -> Right v
 
-handleToRule :: (Value, Value) -> Either Error Rule
+handleToRule :: (Value, Value) -> Either RepoError Rule
 handleToRule (expression, result) =
   Rule <$> parse expression <*> parse result
 
@@ -140,7 +143,7 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
         let result = case fmap handleToRule rawRows of
               [rule] -> case rule of
                 Right rule' -> Right rule'
-                Left  err   -> Left (DatabaseErr err)
+                Left  err   -> Left err
               []     -> Left DoesNotExist
               _      -> Left TooManyResults
 
