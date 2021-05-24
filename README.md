@@ -1,4 +1,4 @@
-# Coupon Service
+# Coupon Service Experience Report
 
 I thought it was time to give Haskell a more thorough look for its production viability.  While we keep chasing a lot of its ideas with various libraries, what if we just used the champ?
 
@@ -35,7 +35,7 @@ The above numbers are from actually the _slowest_ way to run the tests while wor
 
 The tests for the [RuleRepository](https://github.com/bontaq/coupons/blob/main/src/Domain/RuleRepositorySpec.hs) run through both using a real database and a pure equivalent.  Higher level tests like in the [ServiceSpec](https://github.com/bontaq/coupons/blob/main/src/ServiceSpec.hs#L182) can choose to use the real database or pure equivalent.
 
-### Pain
+### Problems
 An algebraic effect handler is how you can get cool, good, things like easily swappable implementations to build up a meta-language for solving your problem.
 
 I chose to use [Fused Effects](https://github.com/fused-effects/fused-effects) as the algebraic effect handler because it's fast and used / developed by Github for its [semantic](https://github.com/github/semantic) project.  If you ever wondered how Python in Github got jump to definition, that's that project.
@@ -61,7 +61,7 @@ Pretty much dependency injection, but you can do more with it.  No reason you co
 
 There are much more humane (human?) effect libraries out there like [Polysemy](https://hackage.haskell.org/package/polysemy) or [Eff](https://github.com/hasura/eff) or [Simple-Effects](https://hackage.haskell.org/package/simple-effects) but I wanted _speed_ and therefore _owned myself_.  Thanks for reading my venting section, but I wanted to include that it's not all beautiful, perfect, and better in Haskell.
 
-### Wonder
+### Great Things
 * Haskell Language Server has HLint built in (it's a linter) and it made me better at Haskell.  Its suggestions are great, like "replace `catMaybes . fmap` with `mapMaybe`".  I didn't even know the fn existed.
 * Parallel tests with a real database run in less than a second.
 * Implementing a database connection pool took 20 minutes
@@ -82,7 +82,7 @@ Haskell finally got a [real foundation](http://haskell.foundation/) working to i
 
 [GHC 9.2](https://www.haskell.org/ghc/blog/20210401-ghc-9.2.1-alpha1-released.html) continues its gifts of making Haskell vastly more approachable by also introducing the `{-# LANGUAGE GHC2021 #-}` pragma.  Because almost every feature in Haskell is a flag, that's why you see about 50 `{-#  LANGUAGE blahblah #-}` at the top of most files.  That freaks everyone out, so this meta-flag was introduced that turns on everything we'd consider standard to writing Haskell in 2021.
 
-### Feelings
+### Overall
 
 I was a bit afraid to try this project because you know, what if Haskell actually isn't good and I only like doing fun things with it instead of _real work_ with lots of _tests_.  Instead I've found it's extremely productive with a fast feedback loop just like that [1994 study for the Navy](http://web.cecs.pdx.edu/~apt/cs457_2005/hudak-jones.pdf) found it -- even though then it was against C++ and Ada, times ain't changed much and Haskell's only gotten better!
 
