@@ -1,0 +1,20 @@
+name: run-tests
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack-work
+          key: ${{ runner.os }}-${{ matrix.ghc }}
+
+      - name: Build
+        run: docker build .
+
+      - name: Test
+        run: docker run --network container:service stack test
