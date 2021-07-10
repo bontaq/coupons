@@ -27,12 +27,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        stack build --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
-
-    - name: Build
-      run: |
-        stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
+        stack build --dependencies-only
 
     - name: Test
       run: |
-        stack test --system-ghc
+        stack test
