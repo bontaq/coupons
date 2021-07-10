@@ -46,7 +46,7 @@ As for why this section is called Pain, see [this](https://github.com/bontaq/cou
       alg handle sig ctx = RuleRepoIO $ do
  Surprisingly it's not that first line that causes Pain.  That's just how it matches up you saying "This function needs a `RuleRepo` and this is the interpreter for `RuleRepoIO` if you run it with that" with the real code.
  
- The second line is very intense for the brain because of the bad names and lack of documentation.  It took me hours to get all the types to line up correctly and actually return something when used.  If you look at the [Logging Effect](https://github.com/bontaq/coupons/blob/main/src/Effects/Logging.hs) definition, you can see another instance of Pain: all I wanted to do was pass in a logger, but that broke automatic derivation.  Clearly I should be using a Reader monad for configuration like that, _but I'm dumb_.
+ The second line is intense for the brain because of the bad names and lack of documentation.  It took me hours to get all the types to line up correctly and actually return something when used.  If you look at the [Logging Effect](https://github.com/bontaq/coupons/blob/main/src/Effects/Logging.hs) definition, you can see another instance of Pain: all I wanted to do was pass in a logger, but that broke automatic derivation.  Clearly I should be using a Reader monad for configuration like that, but I didn't know.
 
 Even with the generally bad experience, what it provides is extremely nice for actually using the effects, like this:
 
@@ -59,7 +59,7 @@ Even with the generally bad experience, what it provides is extremely nice for a
       log "hello"
 Pretty much dependency injection, but you can do more with it.  No reason you couldn't have some Exception and Telemetry effects as well, and rewrite the `RuleRepo` effect to be in terms of more generic Database / Store effects.
 
-There are much more humane (human?) effect libraries out there like [Polysemy](https://hackage.haskell.org/package/polysemy) or [Eff](https://github.com/hasura/eff) or [Simple-Effects](https://hackage.haskell.org/package/simple-effects) but I wanted _speed_ and therefore _owned myself_.  Thanks for reading my venting section, but I wanted to include that it's not all beautiful, perfect, and better in Haskell.
+There are much more humane (human?) effect libraries out there like [Polysemy](https://hackage.haskell.org/package/polysemy) or [Eff](https://github.com/hasura/eff) or [Simple-Effects](https://hackage.haskell.org/package/simple-effects) but I wanted speed and was slightly chastised for it.  Thanks for reading my venting section, but I wanted to include an example of not everything being beautiful, perfect, and better in Haskell.
 
 ### Great Things
 * Haskell Language Server has HLint built in (it's a linter) and it made me better at Haskell.  Its suggestions are great, like "replace `catMaybes . fmap` with `mapMaybe`".  I didn't even know the fn existed.
@@ -146,6 +146,10 @@ Criterion for built in speed testing
 Property testing
 
 Using parallel map for the rules
+
+Dockerized
+
+Github action that runs tests on PRs
 
 #### Cruft:
 220 MiB used before bed
