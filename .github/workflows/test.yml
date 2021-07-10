@@ -28,6 +28,11 @@ jobs:
       run: |
         stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
 
+    - name: Set Env
+      run: |
+        echo "/usr/lib/postgresql/13/bin/" >> $GITHUB_PATH
+      shell: bash
+
     - name: Test
       run: |
         stack test --system-ghc
