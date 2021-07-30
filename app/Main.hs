@@ -12,7 +12,9 @@ import Data.Pool
 -- JSON handling
 import Data.Aeson hiding (json)
 -- Server
-import Web.Scotty
+import Web.Scotty hiding (header)
+-- Env parsing
+import Env
 
 import Service
 
@@ -21,17 +23,45 @@ import Service
 -- Database pool --
 -------------------
 
-connectionInfo :: ConnectInfo
-connectionInfo =
-  defaultConnectInfo {
-      connectHost = "localhost"
-    , connectUser = "coupon"
-    , connectPassword = "password"
-    , connectDatabase = "coupon"
+defaultHost     = "localhost"
+defaultUser     = "coupon"
+defaultPassword = "password"
+defaultDatabase = "coupon"
+
+startPool :: Config -> IO (Pool Connection)
+startPool config =
+  let connectionInfo = defaultConnectInfo
+        { connectHost = databaseHost config
+        , connectUser = databaseUser config
+        , connectPassword = databasePassword config
+        , connectDatabase = databaseName config
+        }
+  in
+    createPool (connect connectionInfo) close 1 10 10
+
+
+---------
+-- Env --
+---------
+
+data Config = Config
+  { databaseHost :: String
+  , databasePassword :: String
+  , databaseUser :: String
+  , databaseName :: String
   }
 
-startPool :: IO (Pool Connection)
-startPool = createPool (connect connectionInfo) close 1 10 10
+getConfig :: IO Config
+getConfig = Env.parse (header "envparse example") $
+  Config
+    <$> var str "DATABASE_HOST"
+      (def defaultHost <> help "Host location for the database")
+    <*> var str "DATABASE_PASSWORD"
+      (def defaultPassword <> help "Password for the database")
+    <*> var str "DATABASE_USER"
+      (def defaultUser <> help "User for the database")
+    <*> var str "DATABASE_NAME"
+      (def defaultDatabase <> help "The name of the database")
 
 
 ------------
@@ -57,10 +87,8 @@ routes pool = do
 
 main :: IO ()
 main = do
-  -- here we could access the Env / read settings from a file / build a nice command line tool
-  pool <- startPool
-  -- conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
+  envConfig <- getConfig
 
-  -- it expects a database connection, we should be passing in a pool instead of using the
-  -- same connection
+  pool <- startPool envConfig
+
   scotty 3000 (routes pool)
