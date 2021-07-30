@@ -45,20 +45,20 @@ library
   hs-source-dirs:
       src
   build-depends:
-                  base >=4.7 && <5
-                , aeson
-                , fast-logger
-                , fused-effects
-                , hspec
-                , postgresql-simple
-                , postgresql-simple-migration
-                , tmp-postgres
-                , bytestring
-                , time
-                , random
+      base >=4.7 && <5
+    , aeson
+    , fast-logger
+    , fused-effects
+    , hspec
+    , postgresql-simple
+    , postgresql-simple-migration
+    , tmp-postgres
+    , bytestring
+    , time
+    , random
   default-language: Haskell2010
 
-executable coupons-exe
+executable coupons
   main-is: Main.hs
   other-modules:
       Paths_coupons

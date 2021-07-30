@@ -189,6 +189,7 @@ spec = parallel $ do
 
           repo (addRule ruleWithCode)
 
+
           openRules <- repo getOpenRules
           openRules `shouldBe` Right []
           closedRule <- repo (getClosedRule "test-99")
