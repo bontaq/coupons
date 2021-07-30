@@ -74,6 +74,7 @@ executable coupons
     , aeson
     , time
     , scotty
+    , envparse
   default-language: Haskell2010
 
 test-suite coupons-test
