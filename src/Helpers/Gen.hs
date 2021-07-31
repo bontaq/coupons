@@ -4,15 +4,15 @@ module Helpers.Gen where
 import System.Random
 import Database.PostgreSQL.Simple hiding (In)
 import Data.Aeson
-import Data.Time.Clock
-import Data.Time.Calendar
+import Chronos
+import Torsor
 
 import Domain.Rule
 import Domain.Shared
 
-dayDiff = secondsToNominalDiffTime (24 * 60 * 60)
-
-todayUTC = UTCTime (fromGregorian 2021 5 21) 0
+todayUTC = datetimeToTime
+  $ Datetime (Date (Year 2021) (Month 5) (DayOfMonth 21)) (TimeOfDay 0 0 0)
+tomorrowUTC = add day todayUTC
 
 openRules :: [Rule]
 openRules =
@@ -24,7 +24,7 @@ openRules =
   , Rule (OneOf [ Has (One "cat") (Is "cat-code")
                 , Has (One "dog") (Is "dog-code")
                 ] $ Is "cat-or-dog-code") [AmountOff 10 WholeCart]
-  , Rule (Between todayUTC (addUTCTime dayDiff todayUTC) $ Is "today only") []
+  , Rule (Between todayUTC tomorrowUTC $ Is "today only") []
   ]
 
 -- insert a bunch of rules

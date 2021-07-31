@@ -19,7 +19,7 @@ import Control.Monad.IO.Class (MonadIO(..))
 import Control.Algebra (Has)
 import Control.Carrier.Reader
 import Control.Carrier.Lift
-import Effects.Logging (Log, log, runLogIO)
+import Effects.Logging (Log, log, runLogIO, runLogFile)
 
 import Data.List
 import Data.Maybe
@@ -121,7 +121,11 @@ getActions context = do
 
   pure matchedRules
 
-runGetActions :: MonadIO m => Connection -> Context -> m (Either RepoError [(Code, [Action])])
+runGetActions
+  :: MonadIO m
+  => Connection
+  -> Context
+  -> m (Either RepoError [(Code, [Action])])
 runGetActions conn context =
   runM
   . runLogIO

@@ -14,7 +14,7 @@ import GHC.OverloadedLabels (IsLabel(..))
 import GHC.TypeLits (Symbol)
 import GHC.Generics
 
-import Data.Time.Clock
+import Chronos
 import Data.Aeson
 
 import Domain.Shared
@@ -36,7 +36,7 @@ data Context = Context
   , bundles  :: [Bundle]
   , location :: Maybe String
   , codes    :: [Code]
-  , time     :: UTCTime
+  , time     :: Time
   } deriving (Generic, Show)
 
 instance FromJSON Context where
