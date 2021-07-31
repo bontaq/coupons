@@ -117,7 +117,7 @@ getActions ::
   ) => Cart -> m (Either RepoError [(Code, [Action])])
 getActions cart = do
   openRules <- getOpenRules
-  closedRules <- sequence . filterDNEs <$> mapM getClosedRules [codes cart]
+  closedRules <- getClosedRules (codes cart)
 
   let
     -- since we want to combine the inner rules of the Eithers (openRules & closedRules),

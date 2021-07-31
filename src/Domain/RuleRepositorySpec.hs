@@ -94,14 +94,14 @@ spec = parallel $ do
           addRule closedRule
           getClosedRules ["test-99"]
 
-        r `shouldBe` Right closedRule
+        r `shouldBe` Right [closedRule]
 
       it "returns a DNE for no matches" $ do
         let repo = run . evalState emptyState . runRuleRepo
 
         repo (getClosedRules ["test-99"])
           `shouldBe`
-          Left DoesNotExist
+          Right []
 
     describe "getOpenRules" $ do
 
@@ -192,7 +192,7 @@ spec = parallel $ do
           openRules <- repo getOpenRules
           openRules `shouldBe` Right []
           closedRule <- repo (getClosedRules ["test-99"])
-          closedRule `shouldBe` Right ruleWithCode
+          closedRule `shouldBe` Right [ruleWithCode]
 
         it "Stores a rule with multiple codes as separate closed rules" $ \connection -> do
           let
@@ -208,9 +208,9 @@ spec = parallel $ do
           repo (addRule ruleWithCodes)
 
           fiftyOffRule <- repo (getClosedRules ["50off"])
-          fiftyOffRule `shouldBe` Right ruleWithCodes
+          fiftyOffRule `shouldBe` Right [ruleWithCodes]
           fiftyFreeRule <- repo (getClosedRules ["50free"])
-          fiftyFreeRule `shouldBe` Right ruleWithCodes
+          fiftyFreeRule `shouldBe` Right [ruleWithCodes]
 
       describe "getClosedRule" $ do
 
@@ -221,13 +221,13 @@ spec = parallel $ do
 
           repo (addRule closedRule)
           rule <- repo (getClosedRules ["test"])
-          rule `shouldBe` Right closedRule
+          rule `shouldBe` Right [closedRule]
 
         it "returns an error for a code that doesn't exist" $ \connection -> do
           let repo = mkRepo connection
 
           rule <- repo (getClosedRules ["DNE"])
-          rule `shouldBe` Left DoesNotExist
+          rule `shouldBe` Right []
 
       describe "getOpenRules" $ do
 
