@@ -5,8 +5,8 @@ import Control.Carrier.Lift
 import Control.Carrier.State.Strict
 import Effects.Logging (runLogIO)
 
-import Data.Time.Clock
-import Data.Time.Calendar
+import Chronos
+import Torsor
 
 import Test.Hspec
 
@@ -24,7 +24,7 @@ spec = parallel $ do
         , bundles = []
         , location = Nothing
         , codes = []
-        , time = UTCTime (fromGregorian 1989 10 18) 0
+        , time = datetimeToTime (Datetime (Date (Year 1989) (Month 10) (DayOfMonth 0)) (TimeOfDay 0 0 0))
         }
 
   describe "findAllSlugs" $ do
@@ -148,15 +148,14 @@ spec = parallel $ do
         `shouldBe`
           Nothing
 
-    describe "Between " $ do
+    describe "Between" $ do
 
-      let day = secondsToNominalDiffTime (24 * 60 * 60)
-      currentTime <- runIO getCurrentTime
+      currentTime <- runIO now
 
       it "matches if the current time is in range" $ do
         let
-          future = addUTCTime day currentTime
-          past = addUTCTime (negate day) currentTime
+          future = add day currentTime
+          past = add (invert day) currentTime
 
         evalExpression
           context{ time=currentTime }
@@ -166,8 +165,8 @@ spec = parallel $ do
 
       it "finds nothing if not in range" $ do
         let
-          future = addUTCTime day currentTime
-          past = addUTCTime (negate day) currentTime
+          future = add day currentTime
+          past = add (invert day) currentTime
 
         evalExpression
           context -- since we initalized it with 1989 as the year

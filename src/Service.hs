@@ -19,7 +19,8 @@ import Control.Monad.IO.Class (MonadIO(..))
 import Control.Algebra (Has)
 import Control.Carrier.Reader
 import Control.Carrier.Lift
-import Effects.Logging (Log, log, runLogIO)
+import Effects.Logging (Log, log, logError, runLogger)
+import System.Log.FastLogger
 
 import Data.List
 import Data.Maybe
@@ -119,12 +120,21 @@ getActions context = do
     combined = (<>) <$> openRules <*> closedRules
     matchedRules = mapMaybe (evalRule context) <$> combined
 
+  case matchedRules of
+    Left error  -> logError (show error)
+    Right rules -> log $ "Found rules: " <> show rules <> " for cart: " <> show context
+
   pure matchedRules
 
-runGetActions :: MonadIO m => Connection -> Context -> m (Either RepoError [(Code, [Action])])
-runGetActions conn context =
+runGetActions
+  :: MonadIO m
+  => Connection
+  -> FastLogger
+  -> Context
+  -> m (Either RepoError [(Code, [Action])])
+runGetActions conn logger context =
   runM
-  . runLogIO
   . runReader conn
   . runRuleRepoIO
+  . runLogger logger
   $ getActions context

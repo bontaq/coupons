@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveFunctor, KindSignatures, GADTs, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE OverloadedStrings, DuplicateRecordFields, DeriveGeneric, TypeApplications, DeriveFunctor, KindSignatures, GADTs, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
 module Effects.Logging
-  ( Log, log, runLogIO, runLogFile )
+  ( Log, log, logError, logWarn, logDebug, runLogIO, runLogger )
 where
 
 import Prelude hiding (log)
@@ -12,6 +12,12 @@ import Control.Carrier.Writer.Strict
 import Control.Carrier.Lift
 import Control.Monad.IO.Class (MonadIO(..))
 import Data.Kind (Type)
+
+import Control.Applicative
+import Data.Aeson hiding (Error)
+import GHC.Generics hiding ((:+:))
+
+import Chronos
 
 -- Fast logger
 import System.Log.FastLogger
@@ -27,13 +33,13 @@ data Message
   | Error String
   | Warn  String
 
--- Render a structured log message as a string.
-renderLogMessage :: Message -> String
+-- Add level info to a string log message
+renderLogMessage :: Message -> LogMessage
 renderLogMessage message = case message of
-  Error message -> "[error] " ++ message
-  Debug message -> "[debug] " ++ message
-  Info  message -> "[info] "  ++ message
-  Warn  message -> "[warn] "  ++ message
+  Error message -> LogMessage { level="error", message=message }
+  Debug message -> LogMessage { level="debug", message=message }
+  Info  message -> LogMessage { level="info",  message=message }
+  Warn  message -> LogMessage { level="warn",  message=message }
 
 --
 -- The logging effect
@@ -43,10 +49,14 @@ renderLogMessage message = case message of
 -- the effect!
 
 data Log (m :: Type -> Type) k where
-  Write :: String -> Log m ()
+  Write :: LogMessage -> Log m ()
 
 log' :: Has Log sig m => Message -> m ()
 log' message = send (Write $ renderLogMessage message)
+
+-----------------------
+-- The API for users --
+-----------------------
 
 log :: Has Log sig m => String -> m ()
 log message = log' (Info message)
@@ -71,6 +81,10 @@ logDebug message = log' (Debug message)
 -- we may as well use the same language as them.
 --
 
+---------------------------------------------------------
+-- This one is just used by tests and prints to stdout --
+---------------------------------------------------------
+
 newtype LogIO m a = LogIO
   { runLogIO :: m a }
   deriving (Applicative, Functor, Monad, MonadIO)
@@ -81,28 +95,72 @@ instance (MonadIO m, Algebra sig m) => Algebra (Log :+: sig) (LogIO m) where
     R other       -> LogIO (alg (runLogIO . handle) other context)
 
 
-data LogWrapper = LogWrapper
-
 newtype LogFileCarrier m a = LogFileCarrier (FastLogger -> m a)
   deriving (Functor)
 
-instance Functor m => Applicative (LogFileCarrier m) where
+instance Applicative m => Applicative (LogFileCarrier m) where
+  pure = LogFileCarrier . const . pure
+  LogFileCarrier f <*> LogFileCarrier a = LogFileCarrier (liftA2 (<*>) f a)
 
-instance Functor m => Monad (LogFileCarrier m) where
+instance Monad m => Monad (LogFileCarrier m) where
+  LogFileCarrier a >>= f = LogFileCarrier (\r -> a r >>= runLogger r . f)
 
-runLogFile :: FastLogger -> LogFileCarrier m a -> m a
-runLogFile logger (LogFileCarrier runLogCarrier) = runLogCarrier logger
 
+-----------------------------
+-- This is the main logger --
+-----------------------------
+
+runLogger :: FastLogger -> LogFileCarrier m a -> m a
+runLogger logger (LogFileCarrier runLogCarrier) = runLogCarrier logger
+
+data LogMessage = LogMessage
+  { level   :: String
+  , message :: String }
+  deriving (Generic, Show)
+
+instance ToJSON LogMessage where
+
+instance ToLogStr LogMessage where
+  toLogStr msg = toLogStr $ encode msg
+
+data LogMessageWithTimestamp = LogMessageWithTimestamp
+  { level     :: String
+  , message   :: String
+  , timestamp :: Datetime }
+  deriving (Generic, Show)
+
+instance ToJSON LogMessageWithTimestamp where
+
+instance ToLogStr LogMessageWithTimestamp where
+  toLogStr msg = toLogStr $ encode msg
+
+handleLogMessage :: Time -> LogMessage -> LogStr
+handleLogMessage timestamp logMessage =
+  let
+    LogMessage{ level=level, message=message } = logMessage
+    messageWithTS = toLogStr $ LogMessageWithTimestamp
+      { level=level
+      , message=message
+      -- if you need a different timestamp output, this is where you'd change it
+      , timestamp=timeToDatetime timestamp }
+  in
+    -- this is what will be logged
+    messageWithTS <> "\n"
 
 instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogFileCarrier m) where
   alg handle sig context = LogFileCarrier $ \logger -> case sig of
-    L (Write msg) -> context <$ liftIO (logger $ toLogStr msg)
-    R other       -> alg (runLogFile logger . handle) other context
+    L (Write msg) -> do
+      -- snag the time so we can include timestamps
+      timestamp <- liftIO now
+      -- send the log message to fast logger to handle
+      context <$ liftIO (logger $ handleLogMessage timestamp msg)
+    R other       -> alg (runLogger logger . handle) other context
 
 
 --
 -- Example usage
 --
+
 application :: Has Log sig m => m ()
 application = do
   logInfo "hello"
@@ -112,5 +170,5 @@ main = do
   (logger, cleanup) <- newFastLogger (LogStdout defaultBufSize)
 
   runM
-    . runLogFile logger
+    . runLogger logger
     $ application

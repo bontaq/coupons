@@ -15,6 +15,8 @@ import Data.Aeson hiding (json)
 import Web.Scotty hiding (header)
 -- Env parsing
 import Env
+-- Logging
+import System.Log.FastLogger
 
 import Service
 
@@ -72,14 +74,14 @@ newtype ErrResp = ErrResp { message :: String } deriving (Generic)
 
 instance ToJSON ErrResp where
 
-routes :: Pool Connection -> ScottyM ()
-routes pool = do
+routes :: Pool Connection -> FastLogger -> ScottyM ()
+routes pool logger = do
   post "/discounts" $ do
     -- gets the JSON from the post, turns it into our domain object
     (context :: Context) <- jsonData
 
-    -- what it all comes down to: do any coupons apply?
-    actions <- withResource pool (\conn -> runGetActions conn context)
+    -- what it all comes down to: do any coupons apply
+    actions <- withResource pool (\conn -> runGetActions conn logger context)
 
     case actions of
       Left err -> json (ErrResp { message=show err })
@@ -91,4 +93,6 @@ main = do
 
   pool <- startPool envConfig
 
-  scotty 3000 (routes pool)
+  (logger, cleanup) <- newFastLogger (LogStdout defaultBufSize)
+
+  scotty 3000 (routes pool logger)

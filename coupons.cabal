@@ -54,7 +54,8 @@ library
     , postgresql-simple-migration
     , tmp-postgres
     , bytestring
-    , time
+    , chronos
+    , torsor
     , random
   default-language: Haskell2010
 
@@ -68,6 +69,7 @@ executable coupons
   build-depends:
       base >=4.7 && <5
     , coupons
+    , fast-logger
     , fused-effects
     , postgresql-simple
     , resource-pool
@@ -106,5 +108,6 @@ test-suite coupons-test
                 , postgresql-simple-migration
                 , tmp-postgres
                 , bytestring
-                , time
+                , chronos
+                , torsor
   default-language: Haskell2010
