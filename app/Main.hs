@@ -78,7 +78,7 @@ routes :: Pool Connection -> FastLogger -> ScottyM ()
 routes pool logger = do
   post "/discounts" $ do
     -- gets the JSON from the post, turns it into our domain object
-    (context :: Context) <- jsonData
+    (context :: Cart) <- jsonData
 
     -- what it all comes down to: do any coupons apply
     actions <- withResource pool (\conn -> runGetActions conn logger context)

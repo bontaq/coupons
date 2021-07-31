@@ -12,14 +12,14 @@ import Test.Hspec
 
 import Domain.Rule
 import Domain.RuleRepository
-import Domain.Context
+import Domain.Cart
 
 
 import Service
 
 spec = parallel $ do
 
-  let context = Context
+  let context = Cart
         { items = []
         , bundles = []
         , location = Nothing
@@ -82,7 +82,7 @@ spec = parallel $ do
 
       it "finds the code for a single item" $ do
         -- TODO: remove :: Context once on GHC 9
-        let context' = context{ items=[Item { slug="car" }] } :: Context
+        let context' = context{ items=[Item { slug="car" }] } :: Cart
         evalExpression context' (Has (One "car") $ Is "car-coupon")
           `shouldBe`
           Just "car-coupon"

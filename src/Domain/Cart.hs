@@ -7,7 +7,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Domain.Context where
+module Domain.Cart where
 
 import GHC.Records
 import GHC.OverloadedLabels (IsLabel(..))
@@ -31,7 +31,7 @@ newtype Item = Item
   { slug :: String
   } deriving (Generic, Show)
 
-data Context = Context
+data Cart = Cart
   { items    :: [Item]
   , bundles  :: [Bundle]
   , location :: Maybe String
@@ -39,6 +39,6 @@ data Context = Context
   , time     :: Time
   } deriving (Generic, Show)
 
-instance FromJSON Context where
+instance FromJSON Cart where
 instance FromJSON Item where
 instance FromJSON Bundle where

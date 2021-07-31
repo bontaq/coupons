@@ -31,7 +31,7 @@ library
       Service
   other-modules:
       Paths_coupons
-      , Domain.Context
+      , Domain.Cart
       , Domain.Rule
       , Domain.RuleRepository
       , Domain.RuleRepositorySpec
@@ -84,7 +84,7 @@ test-suite coupons-test
   main-is: Spec.hs
   other-modules:
       Paths_coupons
-      , Domain.Context
+      , Domain.Cart
       , Domain.Rule
       , Domain.RuleRepository
       , Domain.RuleRepositorySpec
