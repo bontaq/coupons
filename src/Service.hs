@@ -5,10 +5,11 @@
 
 module Service
   -- all we expose for the real API
-  ( Cart
-  , runGetActions
+  ( Cart (..)
+  , CartWithoutTime (..)
+  , runMatchCoupons
   -- exported for the tests
-  , getActions
+  , matchCoupons
   , findAllSlugs
   , evalExpression
   ) where
@@ -52,7 +53,7 @@ evalExpression cart expr = case expr of
   Is code -> Just code
 
   Has (Code code) expr ->
-    if code `elem` codes cart then
+    if code `elem` #codes cart then
       -- it passed this rule, so we continue evaluating
       evalExpression cart expr
     else
@@ -72,7 +73,7 @@ evalExpression cart expr = case expr of
       Nothing
 
   In places expr ->
-    case location cart of
+    case #location cart of
       Nothing -> Nothing
       Just place ->
         -- here we're saying that if location is in the cart,
@@ -106,13 +107,13 @@ evalRule cart (Rule expression action) =
     Just code -> Just (code, action)
     Nothing   -> Nothing
 
-getActions ::
+matchCoupons ::
   ( Has Log sig m
   , Has RuleRepo sig m
   ) => Cart -> m (Either RepoError [(Code, [Action])])
-getActions cart = do
+matchCoupons cart = do
   openRules <- getOpenRules
-  closedRules <- getClosedRules (codes cart)
+  closedRules <- getClosedRules (#codes cart)
 
   let
     -- since we want to combine the inner rules of the Eithers (openRules & closedRules),
@@ -127,15 +128,15 @@ getActions cart = do
 
   pure matchedRules
 
-runGetActions
+runMatchCoupons
   :: MonadIO m
   => Connection
   -> FastLogger
   -> Cart
   -> m (Either RepoError [(Code, [Action])])
-runGetActions conn logger cart =
+runMatchCoupons conn logger cart =
   runM
   . runReader conn
   . runRuleRepoIO
   . runLogger logger
-  $ getActions cart
+  $ matchCoupons cart

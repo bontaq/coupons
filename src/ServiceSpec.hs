@@ -19,7 +19,7 @@ import Service
 
 spec = parallel $ do
 
-  let context = Cart
+  let cart = Cart
         { items = []
         , bundles = []
         , location = Nothing
@@ -30,27 +30,27 @@ spec = parallel $ do
   describe "findAllSlugs" $ do
 
     it "works fine with empty information" $ do
-      findAllSlugs context `shouldBe` []
+      findAllSlugs cart `shouldBe` []
 
     it "finds the slugs in items" $ do
-      findAllSlugs (context{ items=[Item { slug="cat" }] })
+      findAllSlugs (cart{ items=[Item { slug="cat" }] })
         `shouldBe` ["cat"]
 
     it "find the bundle's name slug" $ do
-      findAllSlugs (context{ bundles=[Bundle { items=[], slug="a package" }] })
+      findAllSlugs (cart{ bundles=[Bundle { items=[], slug="a package" }] })
         `shouldBe` ["a package"]
 
     it "finds the slugs in bundles" $ do
       let item = Item { slug="cat" }
 
-      findAllSlugs (context{ bundles=[Bundle { items=[item], slug="bundle" }] })
+      findAllSlugs (cart{ bundles=[Bundle { items=[item], slug="bundle" }] })
         `shouldBe` ["cat", "bundle"]
 
     it "works with bundles and items" $ do
       let item = Item { slug="cat-item" }
       let bundle = Bundle { items=[item { slug="bundle-item" }], slug="a-bundle" }
 
-      findAllSlugs context{ bundles=[bundle], items=[item] }
+      findAllSlugs cart{ bundles=[bundle], items=[item] }
         `shouldBe` ["cat-item", "bundle-item", "a-bundle"]
 
   describe "evalExpression" $ do
@@ -58,7 +58,7 @@ spec = parallel $ do
     -- TODO: Could I use property testing for this?  Not sure
 
     it "finds the code for the no-requirements case" $ do
-      evalExpression context (Is "this coupon code")
+      evalExpression cart (Is "this coupon code")
         `shouldBe`
         Just "this coupon code"
 
@@ -66,14 +66,14 @@ spec = parallel $ do
 
       it "finds the code if it matches the has code rule" $ do
         evalExpression
-          (context{ codes=["bike-coupon"] })
+          (cart{ codes=["bike-coupon"] })
           (Has (Code "bike-coupon") $ Is "bike-coupon")
         `shouldBe`
           Just "bike-coupon"
 
       it "finds nothing if it doesn't match the has code rule" $ do
         evalExpression
-          context
+          cart
           (Has (Code "bike-coupon") $ Is "bike-coupon")
         `shouldBe`
           Nothing
@@ -81,24 +81,24 @@ spec = parallel $ do
     describe "Has One / Has Two" $ do
 
       it "finds the code for a single item" $ do
-        -- TODO: remove :: Context once on GHC 9
-        let context' = context{ items=[Item { slug="car" }] } :: Cart
-        evalExpression context' (Has (One "car") $ Is "car-coupon")
+        -- TODO: remove :: Cart once on GHC 9
+        let cart' = cart{ items=[Item { slug="car" }] } :: Cart
+        evalExpression cart' (Has (One "car") $ Is "car-coupon")
           `shouldBe`
           Just "car-coupon"
 
       it "finds the code for two items" $ do
         let item = Item { slug="hat" }
-        evalExpression (context{ items=[item, item] }) (Has (Two "hat") $ Is "hat-coupon")
+        evalExpression (cart{ items=[item, item] }) (Has (Two "hat") $ Is "hat-coupon")
           `shouldBe`
           Just "hat-coupon"
 
       it "finds nothing for item rule miss" $ do
-        evalExpression context (Has (One "car") $ Is "car-coupon")
+        evalExpression cart (Has (One "car") $ Is "car-coupon")
           `shouldBe`
           Nothing
 
-        evalExpression context (Has (Two "car") $ Is "car-coupon")
+        evalExpression cart (Has (Two "car") $ Is "car-coupon")
           `shouldBe`
           Nothing
 
@@ -106,28 +106,28 @@ spec = parallel $ do
 
       it "finds the code for a country place rule" $ do
         evalExpression
-          context{ location=Just"MX" }
+          cart{ location=Just"MX" }
           (In [Country "MX"] $ Is "mx-coupon")
         `shouldBe`
           Just "mx-coupon"
 
       it "finds the code if one of the countries match" $ do
         evalExpression
-          context{ location=Just "GB" }
+          cart{ location=Just "GB" }
           (In [Country "BR", Country "GB"] $ Is "gb-or-br-coupon")
         `shouldBe`
           Just "gb-or-br-coupon"
 
       it "finds nothing if no country places match" $ do
         evalExpression
-          context{ location=Just "US" }
+          cart{ location=Just "US" }
           (In [Country "BR"] $ Is "visit brazil")
         `shouldBe`
           Nothing
 
-      it "finds nothing if no location is in the context" $ do
+      it "finds nothing if no location is in the cart" $ do
         evalExpression
-          context
+          cart
           (In [Country "US"] $ Is "us-coupon")
         `shouldBe`
           Nothing
@@ -136,14 +136,14 @@ spec = parallel $ do
 
       it "find the code if a OneOf rule passes" $ do
         evalExpression
-          context{ items=[Item { slug="boat" }] }
+          cart{ items=[Item { slug="boat" }] }
           (OneOf [Has (One "car") $ Is "", Has (One "boat") $ Is ""] $ Is "car-or-boat")
         `shouldBe`
           Just "car-or-boat"
 
       it "finds nothing if no rules pass" $ do
         evalExpression
-          context
+          cart
           (OneOf [Has (One "car") $ Is "", Has (One "boat") $ Is ""] $ Is "car-or-boat")
         `shouldBe`
           Nothing
@@ -158,7 +158,7 @@ spec = parallel $ do
           past = add (invert day) currentTime
 
         evalExpression
-          context{ time=currentTime }
+          cart{ time=currentTime }
           (Between past future $ Is "the most now code")
         `shouldBe`
           Just "the most now code"
@@ -169,12 +169,12 @@ spec = parallel $ do
           past = add (invert day) currentTime
 
         evalExpression
-          context -- since we initalized it with 1989 as the year
+          cart -- since we initalized it with 1989 as the year
           (Between past future $ Is "the most now code")
         `shouldBe`
           Nothing
 
-  describe "getActions" $ do
+  describe "matchCoupons" $ do
 
     let
       emptyState = RuleState { rules=[], closedRules=[] }
@@ -187,7 +187,7 @@ spec = parallel $ do
         addRule closedRule
         addRule openRule
 
-        getActions context
+        matchCoupons cart
 
       actions `shouldBe` Right []
 
@@ -196,7 +196,7 @@ spec = parallel $ do
         addRule closedRule
         addRule openRule
 
-        getActions (context { codes=["free car"] })
+        matchCoupons (cart { codes=["free car"] })
 
       actions `shouldBe` Right [("Free Car", [FreeProduct "car"])]
 
@@ -205,7 +205,7 @@ spec = parallel $ do
         addRule closedRule
         addRule openRule
 
-        getActions (context { location=Just "BR" })
+        matchCoupons (cart { location=Just "BR" })
 
       actions `shouldBe` Right [("BR Only", [AmountOff 50 WholeCart])]
 
@@ -214,7 +214,7 @@ spec = parallel $ do
         addRule closedRule
         addRule openRule
 
-        getActions (context { location=Just "BR", codes=["free car"] })
+        matchCoupons (cart { location=Just "BR", codes=["free car"] })
 
       actions
         `shouldBe`
