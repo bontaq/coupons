@@ -106,11 +106,6 @@ evalRule cart (Rule expression action) =
     Just code -> Just (code, action)
     Nothing   -> Nothing
 
--- if some of the codes in the cart don't exist, it'll be a DNE error
--- from the repo.  so we throw those out.
-filterDNEs :: [Either RepoError Rule] -> [Either RepoError Rule]
-filterDNEs = filter (/= Left DoesNotExist)
-
 getActions ::
   ( Has Log sig m
   , Has RuleRepo sig m
