@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DuplicateRecordFields, DeriveGeneric, TypeApplications, DeriveFunctor, KindSignatures, GADTs, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeOperators, UndecidableInstances #-}
 module Effects.Logging
-  ( Log, log, runLogIO, runLogFile )
+  ( Log, log, logError, logWarn, logDebug, runLogIO, runLogger )
 where
 
 import Prelude hiding (log)
@@ -33,7 +33,7 @@ data Message
   | Error String
   | Warn  String
 
--- Render a structured log message as a string.
+-- Add level info to a string log message
 renderLogMessage :: Message -> LogMessage
 renderLogMessage message = case message of
   Error message -> LogMessage { level="error", message=message }
@@ -53,6 +53,10 @@ data Log (m :: Type -> Type) k where
 
 log' :: Has Log sig m => Message -> m ()
 log' message = send (Write $ renderLogMessage message)
+
+-----------------------
+-- The API for users --
+-----------------------
 
 log :: Has Log sig m => String -> m ()
 log message = log' (Info message)
@@ -77,6 +81,10 @@ logDebug message = log' (Debug message)
 -- we may as well use the same language as them.
 --
 
+---------------------------------------------------------
+-- This one is just used by tests and prints to stdout --
+---------------------------------------------------------
+
 newtype LogIO m a = LogIO
   { runLogIO :: m a }
   deriving (Applicative, Functor, Monad, MonadIO)
@@ -95,10 +103,15 @@ instance Applicative m => Applicative (LogFileCarrier m) where
   LogFileCarrier f <*> LogFileCarrier a = LogFileCarrier (liftA2 (<*>) f a)
 
 instance Monad m => Monad (LogFileCarrier m) where
-  LogFileCarrier a >>= f = LogFileCarrier (\r -> a r >>= runLogFile r . f)
+  LogFileCarrier a >>= f = LogFileCarrier (\r -> a r >>= runLogger r . f)
 
-runLogFile :: FastLogger -> LogFileCarrier m a -> m a
-runLogFile logger (LogFileCarrier runLogCarrier) = runLogCarrier logger
+
+-----------------------------
+-- This is the main logger --
+-----------------------------
+
+runLogger :: FastLogger -> LogFileCarrier m a -> m a
+runLogger logger (LogFileCarrier runLogCarrier) = runLogCarrier logger
 
 data LogMessage = LogMessage
   { level   :: String
@@ -122,39 +135,40 @@ instance ToLogStr LogMessageWithTimestamp where
   toLogStr msg = toLogStr $ encode msg
 
 handleLogMessage :: Time -> LogMessage -> LogStr
-handleLogMessage ts logMessage =
+handleLogMessage timestamp logMessage =
   let
     LogMessage{ level=level, message=message } = logMessage
-  in
-    toLogStr $ LogMessageWithTimestamp
+    messageWithTS = toLogStr $ LogMessageWithTimestamp
       { level=level
       , message=message
-      , timestamp=timeToDatetime ts
-      }
+      -- if you need a different timestamp output, this is where you'd change it
+      , timestamp=timeToDatetime timestamp }
+  in
+    -- this is what will be logged
+    messageWithTS <> "\n"
 
 instance (MonadIO m, Algebra  sig m) => Algebra (Log :+: sig) (LogFileCarrier m) where
   alg handle sig context = LogFileCarrier $ \logger -> case sig of
     L (Write msg) -> do
-      ts <- liftIO now
-      context <$ liftIO (logger $ handleLogMessage ts msg)
-    R other       -> alg (runLogFile logger . handle) other context
+      -- snag the time so we can include timestamps
+      timestamp <- liftIO now
+      -- send the log message to fast logger to handle
+      context <$ liftIO (logger $ handleLogMessage timestamp msg)
+    R other       -> alg (runLogger logger . handle) other context
 
 
 --
 -- Example usage
 --
 
--- application :: Has Log sig m => m ()
--- application = do
---   logInfo "hello"
---
--- timeStampFormat :: TimeFormat
--- timeStampFormat = "%Y-%m-%d %H:%M:%S"
---
--- main :: IO ()
--- main = do
---   (logger, cleanup) <- newFastLogger (LogStdout defaultBufSize)
---
---   runM
---     . runLogFile logger
---     $ application
+application :: Has Log sig m => m ()
+application = do
+  logInfo "hello"
+
+main :: IO ()
+main = do
+  (logger, cleanup) <- newFastLogger (LogStdout defaultBufSize)
+
+  runM
+    . runLogger logger
+    $ application

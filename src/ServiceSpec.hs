@@ -150,7 +150,6 @@ spec = parallel $ do
 
     describe "Between" $ do
 
-      -- let day = secondsToNominalDiffTime (24 * 60 * 60)
       currentTime <- runIO now
 
       it "matches if the current time is in range" $ do

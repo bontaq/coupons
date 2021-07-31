@@ -10,8 +10,6 @@ import GHC.IO
 import Database.PostgreSQL.Simple hiding (In)
 import Database.Postgres.Temp
 
--- import Data.Time.Calendar
--- import Data.Time.Clock
 import Chronos
 
 import Test.Hspec

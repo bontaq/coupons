@@ -69,6 +69,7 @@ executable coupons
   build-depends:
       base >=4.7 && <5
     , coupons
+    , fast-logger
     , fused-effects
     , postgresql-simple
     , resource-pool
