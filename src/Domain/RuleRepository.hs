@@ -18,7 +18,8 @@ import Data.Kind (Type)
 
 -- Database
 import Database.PostgreSQL.Simple hiding (In)
-import Data.ByteString.Char8 hiding (concat, concatMap, filter)
+import qualified Database.PostgreSQL.Simple as PS
+import Data.ByteString.Char8 hiding (concat, concatMap, filter, elem)
 
 -- JSON handling
 import Data.Aeson
@@ -35,11 +36,14 @@ import Data.Maybe
 addRule :: Has RuleRepo sig m => Rule -> m ()
 addRule rule = send (AddRule rule)
 
+getRules :: Has RuleRepo sig m => [Code] -> m (Either RepoError [Rule])
+getRules codes = send (GetRules codes)
+
 getOpenRules :: Has RuleRepo sig m => m (Either RepoError [Rule])
 getOpenRules = send GetOpenRules
 
-getClosedRule :: Has RuleRepo sig m => Code -> m (Either RepoError Rule)
-getClosedRule code = send (GetClosedRule code)
+getClosedRules :: Has RuleRepo sig m => [Code] -> m (Either RepoError Rule)
+getClosedRules codes = send (GetClosedRules codes)
 
 
 ----------------------------------------------------------
@@ -47,9 +51,10 @@ getClosedRule code = send (GetClosedRule code)
 ----------------------------------------------------------
 
 data RuleRepo (m :: Type -> Type) k where
-  AddRule       :: Rule -> RuleRepo m ()
-  GetOpenRules  :: RuleRepo m (Either RepoError [Rule])
-  GetClosedRule :: Code -> RuleRepo m (Either RepoError Rule)
+  AddRule        :: Rule -> RuleRepo m ()
+  GetRules       :: [Code] -> RuleRepo m (Either RepoError [Rule])
+  GetOpenRules   :: RuleRepo m (Either RepoError [Rule])
+  GetClosedRules :: [Code] -> RuleRepo m (Either RepoError Rule)
 
 
 --------------------------------------------------
@@ -112,11 +117,11 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
         -- replace the inside of ctx with result, and rewrap it into the monad
         pure $ result <$ ctx
 
-      L (GetClosedRule code) -> do
+      L (GetClosedRules codes) -> do
         rawRows <-
           liftIO (query conn
-                   "select expression, result from closed_rules where code = ?"
-                   (Only code) :: IO [(Value, Value)])
+                   "select expression, result from closed_rules where code in ?"
+                   (Only $ PS.In codes) :: IO [(Value, Value)])
 
         let result = case fmap handleToRule rawRows of
               [rule] -> case rule of
@@ -181,8 +186,8 @@ instance Algebra sig m => Algebra (RuleRepo :+: sig) (RuleRepoState m) where
       -- TODO: I should return an Either Error Rule for adding a Rule
       ctx <$ pure ()
 
-    L (GetClosedRule code) -> do
-      rules <- filter (\(_, code') -> code' == code) . closedRules <$> get
+    L (GetClosedRules codes) -> do
+      rules <- filter (\(_, code') -> code' `elem` codes) . closedRules <$> get
 
       let result = case rules of
             [(rule, code)] -> Right rule
