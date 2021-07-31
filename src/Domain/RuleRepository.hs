@@ -33,7 +33,7 @@ import Data.Maybe
 -- The API for clients to use --
 --------------------------------
 
-addRule :: Has RuleRepo sig m => Rule -> m ()
+addRule :: Has RuleRepo sig m => Rule -> m (Either RepoError Rule)
 addRule rule = send (AddRule rule)
 
 getRules :: Has RuleRepo sig m => [Code] -> m (Either RepoError [Rule])
@@ -54,7 +54,7 @@ getClosedRules codes = send (GetClosedRules codes)
 ----------------------------------------------------------
 
 data RuleRepo (m :: Type -> Type) k where
-  AddRule        :: Rule -> RuleRepo m ()
+  AddRule        :: Rule -> RuleRepo m (Either RepoError Rule)
   GetOpenRules   :: RuleRepo m (Either RepoError [Rule])
   GetClosedRules :: [Code] -> RuleRepo m (Either RepoError [Rule])
 
@@ -144,7 +144,7 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
               "insert into closed_rules (expression, result, code) values (?, ?, ?)"
               (fmap (encode expression, encode result,) codes)
 
-        ctx <$ pure ()
+        pure $ Right (Rule expression result) <$ ctx
 
       R other -> alg (runRuleRepoIO . handle) (R other) ctx  -- hand off to other interpreters
 
@@ -181,7 +181,7 @@ instance Algebra sig m => Algebra (RuleRepo :+: sig) (RuleRepoState m) where
                     RuleState { rules=rules, closedRules=newRules <> closedRules })
 
       -- TODO: I should return an Either Error Rule for adding a Rule
-      ctx <$ pure ()
+      pure $ Right newRule <$ ctx
 
     L (GetClosedRules codes) -> do
       rulesWithCodes <- filter (\(_, code') -> code' `elem` codes) . closedRules <$> get
