@@ -23,7 +23,7 @@ import System.Log.FastLogger
 -- Time
 import Chronos
 
-import Service -- (Cart, CartWithoutTime, runMatchCoupons)
+import Service (Cart(..), CartWithoutTime(..), runMatchCoupons)
 
 
 -------------------
