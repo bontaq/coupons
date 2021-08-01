@@ -18,7 +18,8 @@ import Data.Kind (Type)
 
 -- Database
 import Database.PostgreSQL.Simple hiding (In)
-import Data.ByteString.Char8 hiding (concat, concatMap, filter)
+import qualified Database.PostgreSQL.Simple as PS
+import Data.ByteString.Char8 hiding (concat, concatMap, filter, elem)
 
 -- JSON handling
 import Data.Aeson
@@ -32,14 +33,20 @@ import Data.Maybe
 -- The API for clients to use --
 --------------------------------
 
-addRule :: Has RuleRepo sig m => Rule -> m ()
+addRule :: Has RuleRepo sig m => Rule -> m (Either RepoError Rule)
 addRule rule = send (AddRule rule)
+
+getRules :: Has RuleRepo sig m => [Code] -> m (Either RepoError [Rule])
+getRules codes = do
+  openRules <- send GetOpenRules
+  closedRules <- send (GetClosedRules codes)
+  pure (openRules <> closedRules)
 
 getOpenRules :: Has RuleRepo sig m => m (Either RepoError [Rule])
 getOpenRules = send GetOpenRules
 
-getClosedRule :: Has RuleRepo sig m => Code -> m (Either RepoError Rule)
-getClosedRule code = send (GetClosedRule code)
+getClosedRules :: Has RuleRepo sig m => [Code] -> m (Either RepoError [Rule])
+getClosedRules codes = send (GetClosedRules codes)
 
 
 ----------------------------------------------------------
@@ -47,9 +54,9 @@ getClosedRule code = send (GetClosedRule code)
 ----------------------------------------------------------
 
 data RuleRepo (m :: Type -> Type) k where
-  AddRule       :: Rule -> RuleRepo m ()
-  GetOpenRules  :: RuleRepo m (Either RepoError [Rule])
-  GetClosedRule :: Code -> RuleRepo m (Either RepoError Rule)
+  AddRule        :: Rule -> RuleRepo m (Either RepoError Rule)
+  GetOpenRules   :: RuleRepo m (Either RepoError [Rule])
+  GetClosedRules :: [Code] -> RuleRepo m (Either RepoError [Rule])
 
 
 --------------------------------------------------
@@ -112,18 +119,13 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
         -- replace the inside of ctx with result, and rewrap it into the monad
         pure $ result <$ ctx
 
-      L (GetClosedRule code) -> do
+      L (GetClosedRules codes) -> do
         rawRows <-
           liftIO (query conn
-                   "select expression, result from closed_rules where code = ?"
-                   (Only code) :: IO [(Value, Value)])
+                   "select expression, result from closed_rules where code in ?"
+                   (Only $ PS.In codes) :: IO [(Value, Value)])
 
-        let result = case fmap handleToRule rawRows of
-              [rule] -> case rule of
-                Right rule' -> Right rule'
-                Left  err   -> Left err
-              []     -> Left DoesNotExist
-              _      -> Left TooManyResults
+        let result = mapM handleToRule rawRows
 
         pure $ result <$ ctx
 
@@ -142,7 +144,7 @@ instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m)
               "insert into closed_rules (expression, result, code) values (?, ?, ?)"
               (fmap (encode expression, encode result,) codes)
 
-        ctx <$ pure ()
+        pure $ Right (Rule expression result) <$ ctx
 
       R other -> alg (runRuleRepoIO . handle) (R other) ctx  -- hand off to other interpreters
 
@@ -179,43 +181,13 @@ instance Algebra sig m => Algebra (RuleRepo :+: sig) (RuleRepoState m) where
                     RuleState { rules=rules, closedRules=newRules <> closedRules })
 
       -- TODO: I should return an Either Error Rule for adding a Rule
-      ctx <$ pure ()
+      pure $ Right newRule <$ ctx
 
-    L (GetClosedRule code) -> do
-      rules <- filter (\(_, code') -> code' == code) . closedRules <$> get
+    L (GetClosedRules codes) -> do
+      rulesWithCodes <- filter (\(_, code') -> code' `elem` codes) . closedRules <$> get
 
-      let result = case rules of
-            [(rule, code)] -> Right rule
-            []             -> Left DoesNotExist
-            _              -> Left TooManyResults
+      let rules = fmap fst rulesWithCodes
 
-      pure $ result <$ ctx
+      pure $ Right rules <$ ctx
 
     R other -> alg (runRuleRepo . handle) (R other) ctx
-
-
----------------------
--- Just some cruft --
----------------------
-
--- query :: [Rule]
--- query' = do
---   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
---   i <- query_ conn "select expression, result from rules" :: IO [(Value, Value)]
---   print i
---
--- -- insert :: Rule -> IO ()
--- insert' = do
---   conn <- connectPostgreSQL "host=localhost dbname=coupon user=coupon password=password"
---   let expression = encode $ BigSpend 500 (Name "Big Spenda")
---       result = encode $ [AmountOff 1000 WholeCart]
---
---   execute conn
---     "insert into rules (expression, result) values (?, ?)"
---     (expression, result)
---   pure ()
---
---
--- -- getCouponsForSku :: Sku -> [Coupon]
---
--- getCouponsForSku = undefined

@@ -31,16 +31,14 @@ library
       Service
   other-modules:
       Paths_coupons
-      , Domain.Context
+      , Commands.MatchCoupons
+      , Domain.Cart
       , Domain.Rule
       , Domain.RuleRepository
-      , Domain.RuleRepositorySpec
       , Domain.Shared
       , Effects.Logging
-      , Effects.LoggingSpec
       , Helpers.Migrate
       , Helpers.Gen
-      , ServiceSpec
 
   hs-source-dirs:
       src
@@ -69,6 +67,7 @@ executable coupons
   build-depends:
       base >=4.7 && <5
     , coupons
+    , chronos
     , fast-logger
     , fused-effects
     , postgresql-simple
@@ -84,7 +83,9 @@ test-suite coupons-test
   main-is: Spec.hs
   other-modules:
       Paths_coupons
-      , Domain.Context
+      , Commands.MatchCoupons
+      , Commands.MatchCouponsSpec
+      , Domain.Cart
       , Domain.Rule
       , Domain.RuleRepository
       , Domain.RuleRepositorySpec
@@ -93,21 +94,20 @@ test-suite coupons-test
       , Effects.LoggingSpec
       , Helpers.Migrate
       , Service
-      , ServiceSpec
   hs-source-dirs:
       src
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-                  base >=4.7 && <5
-                , coupons
-                , aeson
-                , fast-logger
-                , fused-effects
-                , hspec
-                , postgresql-simple
-                , postgresql-simple-migration
-                , tmp-postgres
-                , bytestring
-                , chronos
-                , torsor
+      base >=4.7 && <5
+    , coupons
+    , aeson
+    , fast-logger
+    , fused-effects
+    , hspec
+    , postgresql-simple
+    , postgresql-simple-migration
+    , tmp-postgres
+    , bytestring
+    , chronos
+    , torsor
   default-language: Haskell2010

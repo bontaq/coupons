@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -5,6 +7,7 @@ module Main where
 
 -- for deriving the ToJSON for ErrResp
 import GHC.Generics
+import Control.Monad.IO.Class
 -- DB
 import Database.PostgreSQL.Simple
 -- DB Pool
@@ -17,8 +20,10 @@ import Web.Scotty hiding (header)
 import Env
 -- Logging
 import System.Log.FastLogger
+-- Time
+import Chronos
 
-import Service
+import Service (Cart(..), CartWithoutTime(..), runMatchCoupons)
 
 
 -------------------
@@ -74,18 +79,32 @@ newtype ErrResp = ErrResp { message :: String } deriving (Generic)
 
 instance ToJSON ErrResp where
 
+addTime :: CartWithoutTime -> Time -> Cart
+addTime CartWithoutTime{..} time = Cart
+  { items=items
+  , bundles=bundles
+  , location=location
+  , codes=codes
+  , time=time
+  }
+
 routes :: Pool Connection -> FastLogger -> ScottyM ()
 routes pool logger = do
-  post "/discounts" $ do
+  post "/match-discounts" $ do
     -- gets the JSON from the post, turns it into our domain object
-    (context :: Context) <- jsonData
+    (cartWithoutTime :: CartWithoutTime) <- jsonData
+
+    -- add the time
+    time <- liftIO now
+    let cart = addTime cartWithoutTime time
 
     -- what it all comes down to: do any coupons apply
-    actions <- withResource pool (\conn -> runGetActions conn logger context)
+    matches <- withResource pool (\conn -> runMatchCoupons conn logger cart)
 
-    case actions of
+    case matches of
       Left err -> json (ErrResp { message=show err })
-      Right actions -> json actions
+      Right matches -> json matches
+
 
 main :: IO ()
 main = do
