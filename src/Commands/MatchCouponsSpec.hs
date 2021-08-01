@@ -1,5 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-module ServiceSpec where
+module Commands.MatchCouponsSpec where
 
 import Control.Carrier.Lift
 import Control.Carrier.State.Strict
