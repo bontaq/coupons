@@ -1,9 +1,9 @@
 # Coupon Service Experience Report
 
-I thought it was time to give Haskell a more thorough look for its production viability.  While we keep chasing a lot of its ideas with various libraries, what if we just used the champ?
+I thought it was time to give Haskell a more thorough look for its production viability.
 
 ### Project
-To keep it pretty short because this is mostly about what it's like to do _work_ with Haskell, it's a Coupon Service that:
+To keep it pretty short because this is mostly about what it's like to do work with Haskell, it's a Coupon Service that:
 - accepts some [Context](https://github.com/bontaq/coupons/blob/main/src/Domain/Context.hs#L34)
 - sees if the expression in the [Rule](https://github.com/bontaq/coupons/blob/main/src/Domain/Rule.hs) passes when applied to the Context
 - returns the matching Code with Actions
@@ -11,7 +11,7 @@ To keep it pretty short because this is mostly about what it's like to do _work_
 The entrypoint is [Main](https://github.com/bontaq/coupons/blob/main/app/Main.hs) which brings up the server & db connection pool, parses the incoming data, and then calls the [Service](https://github.com/bontaq/coupons/blob/main/src/Service.hs).
 
 ### Workflow
-Haskell, has an extremely good Repl.  I would consider it the primary way to develop and interact with the code.  Typically, what you'll do _a lot_ of is 
+Haskell has an extremely good Repl.  I would consider it the primary way to develop and interact with the code.  Typically, what you'll do a lot is 
 
  1. Have the code you want to test open
  2. Have the tests open
@@ -24,14 +24,14 @@ If you encounter harder problems, two important things to know about are [Hoogle
 
 Hoogle is unlike anything else we have, and is a type-directed search for functions (though it does more, too).  If you're trying to solve something like, "How do I collect only the good values from this list of Maybes," all you have to do is search for `[Maybe a] -> [a]` and it comes back with your answer: `catMaybes`.  
 
-But that's not all!  You can run Hoogle [locally](https://github.com/ndmitchell/hoogle/blob/master/docs/Install.md) so that results include your code.  Just like that you have a type-searchable and documented codebase.
+You can also run Hoogle [locally](https://github.com/ndmitchell/hoogle/blob/master/docs/Install.md) so that results include your code.  This gives a type-searchable and documented codebase.
 
-Typed holes are a useful feature for feeling out what the types should be.  If you put a `_` in front of something, like `test = 1 + _something`, then on building or loading the code into the Repl, Haskell will give you information about what the type _could_ be and information about all the surrounding types.
+Typed holes are a useful feature for feeling out what the types should be.  If you put a `_` in front of something, like `test = 1 + _something`, then on building or loading the code into the Repl, Haskell will give you information about what the type could be and information about all the surrounding types.
 
 ### Testing
 There's 44 tests, on the first run they take about 10 seconds.  On the next run and after, about 5 seconds.  For both of those, it's mostly compiling time.  If there's no need to recompile, actually running the tests takes 0.047 seconds.  They all run in parallel.
 
-The above numbers are from actually the _slowest_ way to run the tests while working, by using the command line `stack test`.  The faster and preferred way is to run them in the Repl, which with since you're skipping compilation, takes less than 1 second to go from code change -> test results.
+The above numbers are from actually the slowest way to run the tests while working, by using the command line `stack test`.  The faster and preferred way is to run them in the Repl, which with since you're skipping compilation, takes less than 1 second to go from code change -> test results.
 
 The tests for the [RuleRepository](https://github.com/bontaq/coupons/blob/main/src/Domain/RuleRepositorySpec.hs) run through both using a real database and a pure equivalent.  Higher level tests like in the [ServiceSpec](https://github.com/bontaq/coupons/blob/main/src/ServiceSpec.hs#L182) can choose to use the real database or pure equivalent.
 
@@ -40,13 +40,13 @@ An algebraic effect handler is how you can get cool, good, things like easily sw
 
 I chose to use [Fused Effects](https://github.com/fused-effects/fused-effects) as the algebraic effect handler because it's fast and used / developed by Github for its [semantic](https://github.com/github/semantic) project.  If you ever wondered how Python in Github got jump to definition, that's that project.
 
-As for why this section is called Pain, see [this](https://github.com/bontaq/coupons/blob/main/src/Domain/RuleRepository.hs#L95):
+As for why this section is called Problems, see [this](https://github.com/bontaq/coupons/blob/main/src/Domain/RuleRepository.hs#L95):
 
     instance (MonadIO m, Algebra sig m) => Algebra (RuleRepo :+: sig) (RuleRepoIO m) where
       alg handle sig ctx = RuleRepoIO $ do
- Surprisingly it's not that first line that causes Pain.  That's just how it matches up you saying "This function needs a `RuleRepo` and this is the interpreter for `RuleRepoIO` if you run it with that" with the real code.
+ Surprisingly it's not that first line that causes pain.  That's just how it matches up you saying "This function needs a `RuleRepo` and this is the interpreter for `RuleRepoIO` if you run it with that" with the real code.
  
- The second line is intense for the brain because of the bad names and lack of documentation.  It took me hours to get all the types to line up correctly and actually return something when used.  If you look at the [Logging Effect](https://github.com/bontaq/coupons/blob/main/src/Effects/Logging.hs) definition, you can see another instance of Pain: all I wanted to do was pass in a logger, but that broke automatic derivation.  Clearly I should be using a Reader monad for configuration like that, but I didn't know.
+ The second line is painful lack of documentation.  It took me hours to get all the types to line up correctly and actually return something when used.  If you look at the [Logging Effect](https://github.com/bontaq/coupons/blob/main/src/Effects/Logging.hs) definition, you can see another instance of trouble: all I wanted to do was pass in a logger, but that broke automatic derivation.  Clearly I should be using a Reader effect for configuration like that, but I didn't know.
 
 Even with the generally bad experience, what it provides is extremely nice for actually using the effects, like this:
 
@@ -57,15 +57,16 @@ Even with the generally bad experience, what it provides is extremely nice for a
     getActions context = do
       openRules <- getOpenRules
       log "hello"
+      
 Pretty much dependency injection, but you can do more with it.  No reason you couldn't have some Exception and Telemetry effects as well, and rewrite the `RuleRepo` effect to be in terms of more generic Database / Store effects.
 
-There are much more humane (human?) effect libraries out there like [Polysemy](https://hackage.haskell.org/package/polysemy) or [Eff](https://github.com/hasura/eff) or [Simple-Effects](https://hackage.haskell.org/package/simple-effects) but I wanted speed and was slightly chastised for it.  Thanks for reading my venting section, but I wanted to include an example of not everything being beautiful, perfect, and better in Haskell.
+There are much more humane (human?) effect libraries out there like [Polysemy](https://hackage.haskell.org/package/polysemy) or [Eff](https://github.com/hasura/eff) or [Simple-Effects](https://hackage.haskell.org/package/simple-effects) but I wanted speed.  I wanted to include an example of where Haskell can get difficult.
 
 ### Great Things
 * Haskell Language Server has HLint built in (it's a linter) and it made me better at Haskell.  Its suggestions are great, like "replace `catMaybes . fmap` with `mapMaybe`".  I didn't even know the fn existed.
 * Parallel tests with a real database run in less than a second.
 * Implementing a database connection pool took 20 minutes
-* Doing the whole "use a real DB" thing in tests wasn't hard and seeing in the [HSpec](https://hspec.github.io/writing-specs.html) docs, in parentheses "(for example, if you wanted to open a database connection before each item and pass the connection in)", literally exactly what I was trying to do, fulfilled some level of Maslow's hierarchy of needs I didn't know existed.
+* Doing the whole "use a real DB" thing in tests wasn't hard and seeing in the [HSpec](https://hspec.github.io/writing-specs.html) docs, in parentheses "(for example, if you wanted to open a database connection before each item and pass the connection in)", literally exactly what I was trying to do, was refreshing.
 
 ### The Future
 Haskell's having a bit of a moment in that development speed has picked up, long standing problems are being fixed, and it feels like it's all coming together.  Here's what's happened recently:
@@ -84,13 +85,11 @@ Haskell finally got a [real foundation](http://haskell.foundation/) working to i
 
 ### Overall
 
-I was a bit afraid to try this project because you know, what if Haskell actually isn't good and I only like doing fun things with it instead of _real work_ with lots of _tests_.  Instead I've found it's extremely productive with a fast feedback loop just like that [1994 study for the Navy](http://web.cecs.pdx.edu/~apt/cs457_2005/hudak-jones.pdf) found it -- even though then it was against C++ and Ada, times ain't changed much and Haskell's only gotten better!
+I was a bit afraid to try this project because you know, what if Haskell actually isn't good and I only like doing fun things with it instead of real work with lots of tests.  Instead I've found it's extremely productive with a fast feedback loop just like that [1994 study for the Navy](http://web.cecs.pdx.edu/~apt/cs457_2005/hudak-jones.pdf) found it -- even though then it was against C++ and Ada.
 
 Really leaning into Repl driven development lead to an interesting thing:  the [Helpers](https://github.com/bontaq/coupons/tree/main/src/Helpers) modules.  Both of those are expected to be used only in the Repl to quickly get information into the Database -- I can imagine a world where most files include some Repl helpers, for easier interaction with code.
 
 ### Performance
-
-Of course I had to run it on a real server for real.
 
 To make sure performance was consistent and to make sure there were no memory leaks, I've been hitting the service with 1000 requests (over 10 seconds) every minute for 8 hours.  It's running on an 18$/m VPS with 2Gb ram and 2VCpus.  
 
@@ -110,7 +109,7 @@ Cpu: Never above 15%
 
 Memory: Total used was at 220MiB when I began, it's at 230MiB now.  That's for the whole system including postgres, the Haskell server has stayed at 60MiB. 
 
-Overall: Cool as a cucumber and could be pushed a lot more.  I'm not even doing anything in parallel or using caching!
+Overall: Cool as a cucumber and could be pushed a lot more.  I'm not even doing anything in parallel or using caching.
 
 ### Ending
 Thanks!
