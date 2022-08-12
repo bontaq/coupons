@@ -22,7 +22,7 @@ That's the main loop for development.  As you're building though you'll also be 
 
 If you encounter harder problems, two important things to know about are [Hoogle](https://hoogle.haskell.org/) and [Typed Holes](https://wiki.haskell.org/GHC/Typed_holes).  
 
-Hoogle is unlike anything else we have, and is a type-directed search for functions (though it does more, too).  If you're trying to solve something like, "How do I collect only the good values from this list of Maybes," all you have to do is search for `[Maybe a] -> [a]` and it comes back with your answer: `catMaybes`.  
+Hoogle is a type-directed search for functions (though it does more, too).  If you're trying to solve something like, "How do I collect only the good values from this list of Maybes," all you have to do is search for `[Maybe a] -> [a]` and it comes back with your answer: `catMaybes`.  
 
 You can also run Hoogle [locally](https://github.com/ndmitchell/hoogle/blob/master/docs/Install.md) so that results include your code.  This gives a type-searchable and documented codebase.
 
@@ -31,7 +31,7 @@ Typed holes are a useful feature for feeling out what the types should be.  If y
 ### Testing
 There's 44 tests, on the first run they take about 10 seconds.  On the next run and after, about 5 seconds.  For both of those, it's mostly compiling time.  If there's no need to recompile, actually running the tests takes 0.047 seconds.  They all run in parallel.
 
-The above numbers are from actually the slowest way to run the tests while working, by using the command line `stack test`.  The faster and preferred way is to run them in the Repl, which with since you're skipping compilation, takes less than 1 second to go from code change -> test results.
+The above numbers are from the slowest way to run the tests while working, by using the command line `stack test`.  The faster and preferred way is to run them in the Repl, which with since you're skipping compilation, takes less than 1 second to go from code change -> test results.
 
 The tests for the [RuleRepository](https://github.com/bontaq/coupons/blob/main/src/Domain/RuleRepositorySpec.hs) run through both using a real database and a pure equivalent.  Higher level tests like in the [ServiceSpec](https://github.com/bontaq/coupons/blob/main/src/ServiceSpec.hs#L182) can choose to use the real database or pure equivalent.
 
@@ -46,9 +46,9 @@ As for why this section is called Problems, see [this](https://github.com/bontaq
       alg handle sig ctx = RuleRepoIO $ do
  Surprisingly it's not that first line that causes pain.  That's just how it matches up you saying "This function needs a `RuleRepo` and this is the interpreter for `RuleRepoIO` if you run it with that" with the real code.
  
- The second line is painful lack of documentation.  It took me hours to get all the types to line up correctly and actually return something when used.  If you look at the [Logging Effect](https://github.com/bontaq/coupons/blob/main/src/Effects/Logging.hs) definition, you can see another instance of trouble: all I wanted to do was pass in a logger, but that broke automatic derivation.  Clearly I should be using a Reader effect for configuration like that, but I didn't know.
+ The second line is painful lack of documentation.  It took me hours to get all the types to line up correctly and actually return something when used.  If you look at the [Logging Effect](https://github.com/bontaq/coupons/blob/main/src/Effects/Logging.hs) definition, you can see another instance of trouble: all I wanted to do was pass in a logger, but that broke automatic derivation.  I should be using a Reader effect for configuration like that, but I didn't know.
 
-Even with the generally bad experience, what it provides is extremely nice for actually using the effects, like this:
+Even with the bad experience, what it provides is extremely nice for actually using the effects, like this:
 
     getActions ::
       ( Has Log sig m
